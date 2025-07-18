@@ -38,6 +38,7 @@ export const Waveform: React.FC<WaveformProps> = ({
   const [cueStartTime, setCueStartTime] = useState<number>(0);
   const [hoveredCue, setHoveredCue] = useState<CuePointData | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [hoveredCuePoint, setHoveredCuePoint] = useState<string | null>(null);
 
   const generateWaveform = useCallback(async (audioUrl: string) => {
     if (!audioUrl) return;
@@ -193,20 +194,22 @@ export const Waveform: React.FC<WaveformProps> = ({
       
       if (cueX >= -10 && cueX <= width + 10) {
         const isBeingDragged = isDraggingCue === cue.id;
+        const isHovered = hoveredCuePoint === cue.id;
         
         // Line
         ctx.fillStyle = isBeingDragged ? 'hsl(0, 84%, 80%)' : 'hsl(0, 84%, 60%)';
         ctx.fillRect(cueX - 1, 0, 3, height);
         
-        // Marker circle
+        // Marker circle - größer bei Hover
+        const circleRadius = isBeingDragged ? 7 : isHovered ? 6 : 4;
         ctx.beginPath();
-        ctx.arc(cueX, 10, isBeingDragged ? 6 : 4, 0, 2 * Math.PI);
+        ctx.arc(cueX, 10, circleRadius, 0, 2 * Math.PI);
         ctx.fill();
         
-        // Highlight border when dragging
-        if (isBeingDragged) {
-          ctx.strokeStyle = 'hsl(210, 20%, 85%)';
-          ctx.lineWidth = 1;
+        // Highlight border when dragging or hovering
+        if (isBeingDragged || isHovered) {
+          ctx.strokeStyle = isHovered ? 'hsl(0, 84%, 90%)' : 'hsl(210, 20%, 85%)';
+          ctx.lineWidth = isHovered ? 2 : 1;
           ctx.stroke();
         }
         
@@ -243,6 +246,27 @@ export const Waveform: React.FC<WaveformProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [drawWaveform]);
+
+  const getCuePointAtPosition = (x: number, y: number): CuePointData | null => {
+    if (!duration) return null;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    
+    const barWidth = (canvas.width * zoomLevel) / waveformData.length;
+    
+    for (const cue of cuePoints) {
+      const cueIndex = (cue.time / duration) * waveformData.length;
+      const cueX = (cueIndex - panOffset) * barWidth;
+      
+      // Nur der Punkt am oberen Ende (y <= 20) erlaubt Interaktion
+      const distanceFromPoint = Math.sqrt(Math.pow(x - cueX, 2) + Math.pow(y - 10, 2));
+      if (distanceFromPoint <= 8 && y <= 20) { // 8px Radius um den Punkt
+        return cue;
+      }
+    }
+    return null;
+  };
 
   const getCueAtPosition = (x: number): CuePointData | null => {
     if (!duration) return null;
@@ -288,14 +312,15 @@ export const Waveform: React.FC<WaveformProps> = ({
     
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
     
-    // Check if clicking on a cue point
-    const cueAtPosition = getCueAtPosition(x);
+    // Check if clicking specifically on a cue point (nur am Punkt, nicht an der Linie)
+    const cuePointAtPosition = getCuePointAtPosition(x, y);
     
-    if (cueAtPosition && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
-      // Start dragging cue point
-      setIsDraggingCue(cueAtPosition.id);
-      setCueStartTime(cueAtPosition.time);
+    if (cuePointAtPosition && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+      // Start dragging cue point nur wenn Punkt getroffen wurde
+      setIsDraggingCue(cuePointAtPosition.id);
+      setCueStartTime(cuePointAtPosition.time);
       event.preventDefault();
     } else if (event.ctrlKey || event.metaKey) {
       // Pan mode
@@ -314,6 +339,7 @@ export const Waveform: React.FC<WaveformProps> = ({
 
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
 
     if (isDraggingCue && duration) {
       // Dragging cue point
@@ -341,13 +367,23 @@ export const Waveform: React.FC<WaveformProps> = ({
       const clickTime = (clickIndex / waveformData.length) * duration;
       onSeek(clickTime);
     } else {
-      // Check for hover over cue points
-      const cueAtPosition = getCueAtPosition(x);
-      if (cueAtPosition) {
-        setHoveredCue(cueAtPosition);
+      // Check for hover over cue point circles (für Hover-Effekt)
+      const cuePointAtPosition = getCuePointAtPosition(x, y);
+      if (cuePointAtPosition) {
+        setHoveredCuePoint(cuePointAtPosition.id);
+        setHoveredCue(cuePointAtPosition);
         setHoverPosition({ x: event.clientX, y: event.clientY });
       } else {
-        setHoveredCue(null);
+        setHoveredCuePoint(null);
+        
+        // Fallback für normale Cue-Hover (für Tooltip)
+        const cueAtPosition = getCueAtPosition(x);
+        if (cueAtPosition) {
+          setHoveredCue(cueAtPosition);
+          setHoverPosition({ x: event.clientX, y: event.clientY });
+        } else {
+          setHoveredCue(null);
+        }
       }
     }
   };
@@ -361,6 +397,7 @@ export const Waveform: React.FC<WaveformProps> = ({
   const handleMouseLeave = () => {
     handleMouseUp();
     setHoveredCue(null);
+    setHoveredCuePoint(null);
   };
 
   const handleWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
