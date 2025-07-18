@@ -1,14 +1,17 @@
 "use client"
 
 import { Toaster as SonnerToaster } from "sonner"
+import { useTheme } from "next-themes"
 
 export function Toaster() {
+  const { theme } = useTheme()
+
   return (
     <SonnerToaster
       position="top-right"
       richColors={false}
       expand={false}
-      theme="dark"
+      theme={theme as "light" | "dark" | "system"}
       className="toaster group"
       toastOptions={{
         duration: 4000,
@@ -21,9 +24,9 @@ export function Toaster() {
           cancelButton:
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
           success:
-            "group-[.toaster]:border-emerald-500/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-emerald-950/90 group-[.toaster]:to-emerald-900/95 group-[.toaster]:text-emerald-100 group-[.toaster]:shadow-2xl group-[.toaster]:shadow-emerald-500/40 group-[.toaster]:backdrop-blur-xl",
+            "group-[.toaster]:border-emerald-500/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-emerald-50/80 group-[.toaster]:to-emerald-100/90 group-[.toaster]:text-emerald-800 group-[.toaster]:shadow-2xl group-[.toaster]:shadow-emerald-500/20 dark:group-[.toaster]:border-emerald-500/30 dark:group-[.toaster]:from-emerald-950/90 dark:group-[.toaster]:to-emerald-900/95 dark:group-[.toaster]:text-emerald-100 dark:group-[.toaster]:shadow-emerald-500/40",
           error:
-            "group-[.toaster]:border-red-500/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-red-950/90 group-[.toaster]:to-red-900/95 group-[.toaster]:text-red-100 group-[.toaster]:shadow-2xl group-[.toaster]:shadow-red-500/40 group-[.toaster]:backdrop-blur-xl",
+            "group-[.toaster]:border-red-500/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-red-50/80 group-[.toaster]:to-red-100/90 group-[.toaster]:text-red-800 group-[.toaster]:shadow-2xl group-[.toaster]:shadow-red-500/20 dark:group-[.toaster]:border-red-500/30 dark:group-[.toaster]:from-red-950/90 dark:group-[.toaster]:to-red-900/95 dark:group-[.toaster]:text-red-100 dark:group-[.toaster]:shadow-red-500/40",
         },
       }}
     />
