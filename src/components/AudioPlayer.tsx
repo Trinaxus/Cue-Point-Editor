@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle } from 'lucide-react';
 import { Waveform } from './Waveform';
 import { CuePoint } from './CuePoint';
 import { TracklistImport } from './TracklistImport';
@@ -310,8 +310,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div className="flex-1">
             <h2 className="text-xl font-bold text-foreground">{file.name}</h2>
-            <p className="text-muted-foreground">
-              {formatTime(duration)} • {cuePoints.length} Cue Points
+            <p className="text-muted-foreground flex items-center gap-2">
+              {formatTime(duration)} 
+              <Circle className="w-3 h-3 fill-current" />
+              {cuePoints.length} Cue Points
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
