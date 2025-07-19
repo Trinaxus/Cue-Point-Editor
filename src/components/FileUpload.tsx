@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, Music, FileX, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
+import jsmediatags from 'jsmediatags';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -13,10 +14,12 @@ interface FileUploadProps {
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFile, onCueImport }) => {
   const [bitrate, setBitrate] = useState<number | null>(null);
+  const [coverImage, setCoverImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedFile) {
       setBitrate(null);
+      setCoverImage(null);
       return;
     }
 
@@ -35,7 +38,28 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
       audio.src = url;
     };
 
+    const extractCoverArt = () => {
+      jsmediatags.read(selectedFile, {
+        onSuccess: (tag) => {
+          const picture = tag.tags.picture;
+          if (picture) {
+            const { data, format } = picture;
+            let base64String = "";
+            for (let i = 0; i < data.length; i++) {
+              base64String += String.fromCharCode(data[i]);
+            }
+            const dataUrl = `data:${format};base64,${btoa(base64String)}`;
+            setCoverImage(dataUrl);
+          }
+        },
+        onError: (error) => {
+          console.log('Error reading ID3 tags:', error);
+        }
+      });
+    };
+
     calculateBitrate();
+    extractCoverArt();
   }, [selectedFile]);
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -218,9 +242,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
       <Card className="p-6 border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Music className="w-6 h-6 text-primary" />
-            </div>
+            {coverImage ? (
+              <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                <img 
+                  src={coverImage} 
+                  alt="Album Cover"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Music className="w-6 h-6 text-primary" />
+              </div>
+            )}
             <div>
               <h3 className="font-semibold text-foreground">{selectedFile.name}</h3>
               <div className="flex flex-wrap gap-2 mt-1">
