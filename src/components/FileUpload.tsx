@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, Music, FileX, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
-import jsmediatags from 'jsmediatags';
+import { parseBuffer } from 'music-metadata-browser';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -38,24 +38,25 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
       audio.src = url;
     };
 
-    const extractCoverArt = () => {
-      jsmediatags.read(selectedFile, {
-        onSuccess: (tag) => {
-          const picture = tag.tags.picture;
-          if (picture) {
-            const { data, format } = picture;
-            let base64String = "";
-            for (let i = 0; i < data.length; i++) {
-              base64String += String.fromCharCode(data[i]);
-            }
-            const dataUrl = `data:${format};base64,${btoa(base64String)}`;
-            setCoverImage(dataUrl);
-          }
-        },
-        onError: (error) => {
-          console.log('Error reading ID3 tags:', error);
+    const extractCoverArt = async () => {
+      try {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const metadata = await parseBuffer(new Uint8Array(arrayBuffer));
+        
+        const picture = metadata.common.picture?.[0];
+        if (picture) {
+          const base64String = btoa(
+            new Uint8Array(picture.data).reduce(
+              (data, byte) => data + String.fromCharCode(byte),
+              ''
+            )
+          );
+          const dataUrl = `data:${picture.format};base64,${base64String}`;
+          setCoverImage(dataUrl);
         }
-      });
+      } catch (error) {
+        console.log('Error reading ID3 tags:', error);
+      }
     };
 
     calculateBitrate();
