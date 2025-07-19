@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, Music, FileX, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
-import { parseBuffer } from 'music-metadata-browser';
+import * as ID3 from 'id3js';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -40,18 +40,15 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
 
     const extractCoverArt = async () => {
       try {
-        const arrayBuffer = await selectedFile.arrayBuffer();
-        const metadata = await parseBuffer(new Uint8Array(arrayBuffer));
+        const tags = await ID3.fromFile(selectedFile);
+        const picture = tags.images?.[0];
         
-        const picture = metadata.common.picture?.[0];
         if (picture) {
+          const arrayBuffer = new Uint8Array(picture.data);
           const base64String = btoa(
-            new Uint8Array(picture.data).reduce(
-              (data, byte) => data + String.fromCharCode(byte),
-              ''
-            )
+            arrayBuffer.reduce((data, byte) => data + String.fromCharCode(byte), '')
           );
-          const dataUrl = `data:${picture.format};base64,${base64String}`;
+          const dataUrl = `data:${picture.mime};base64,${base64String}`;
           setCoverImage(dataUrl);
         }
       } catch (error) {
