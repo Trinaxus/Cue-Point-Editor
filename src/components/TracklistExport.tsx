@@ -20,7 +20,9 @@ export const TracklistExport: React.FC<TracklistExportProps> = ({
   performer 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [mixTitle, setMixTitle] = useState("Mix Set 48");
+  const [mixTitle, setMixTitle] = useState(() => 
+    filename.replace(/\.[^/.]+$/, '') // Entfernt die Dateiendung
+  );
 
   const generateTracklist = () => {
     if (cuePoints.length === 0) return "";
