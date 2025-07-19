@@ -1,7 +1,8 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, Music, FileX, FileText } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Upload, Music, FileX, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
 import * as ID3 from 'id3js';
@@ -59,6 +60,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
     calculateBitrate();
     extractCoverArt();
   }, [selectedFile]);
+
+  const downloadCoverImage = useCallback(() => {
+    if (!coverImage) return;
+    
+    const link = document.createElement('a');
+    link.href = coverImage;
+    link.download = `${selectedFile?.name.replace(/\.[^/.]+$/, "")}_cover.jpg` || 'album_cover.jpg';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [coverImage, selectedFile]);
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -241,13 +253,33 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {coverImage ? (
-              <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                <img 
-                  src={coverImage} 
-                  alt="Album Cover"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <div className="w-12 h-12 overflow-hidden flex-shrink-0 cursor-pointer hover-scale">
+                    <img 
+                      src={coverImage} 
+                      alt="Album Cover"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-[850px] w-full">
+                  <DialogHeader>
+                    <DialogTitle>Album Cover</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex flex-col items-center space-y-4">
+                    <img 
+                      src={coverImage} 
+                      alt="Album Cover"
+                      className="max-w-full max-h-[800px] object-contain"
+                    />
+                    <Button onClick={downloadCoverImage} className="flex items-center gap-2">
+                      <Download className="w-4 h-4" />
+                      Cover herunterladen
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             ) : (
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                 <Music className="w-6 h-6 text-primary" />
