@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Mouse } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { CuePointData } from '@/types/CuePoint';
 
 interface WaveformProps {
@@ -39,6 +40,7 @@ export const Waveform: React.FC<WaveformProps> = ({
   const [hoveredCue, setHoveredCue] = useState<CuePointData | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [hoveredCuePoint, setHoveredCuePoint] = useState<string | null>(null);
+  const [isWheelZoomEnabled, setIsWheelZoomEnabled] = useState(true);
 
   const generateWaveform = useCallback(async (audioUrl: string) => {
     if (!audioUrl) return;
@@ -401,6 +403,8 @@ export const Waveform: React.FC<WaveformProps> = ({
   };
 
   const handleWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
+    if (!isWheelZoomEnabled) return;
+    
     event.preventDefault();
     
     const canvas = canvasRef.current;
@@ -511,11 +515,18 @@ export const Waveform: React.FC<WaveformProps> = ({
           <div className="text-xs text-muted-foreground">
             {zoomLevel.toFixed(1)}x
           </div>
+          <div className="flex items-center space-x-2 bg-secondary/50 rounded-lg p-1">
+            <Mouse className="w-3 h-3 text-muted-foreground" />
+            <Switch
+              checked={isWheelZoomEnabled}
+              onCheckedChange={setIsWheelZoomEnabled}
+            />
+          </div>
         </div>
       </div>
       
       <div className="text-xs text-muted-foreground">
-        {isLoading ? 'Generiere Waveform...' : 'Klick: Springen • Shift+Klick: Cue Point • Drag Cue: Verschieben • Strg+Drag: Pan • Scroll: Zoom'}
+        {isLoading ? 'Generiere Waveform...' : `Klick: Springen • Shift+Klick: Cue Point • Drag Cue: Verschieben • Strg+Drag: Pan${isWheelZoomEnabled ? ' • Scroll: Zoom' : ''}`}
       </div>
       
       <div 
