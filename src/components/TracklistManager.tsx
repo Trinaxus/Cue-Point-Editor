@@ -48,6 +48,8 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
       
       // Try different patterns to match track entries
       const patterns = [
+        // Pattern: "01 - VANANT - The Notion" (export format)
+        /^(\d+)\s*-\s*([^-]+?)\s*-\s*(.+)$/,
         // Pattern: "01	VANANT	The Notion" (with tabs)
         /^(\d+)\s*\t+([^\t]+?)\t+(.+)$/,
         // Pattern: "01 VANANT The Notion" (with spaces)
