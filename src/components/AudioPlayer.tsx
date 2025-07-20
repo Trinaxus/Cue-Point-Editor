@@ -5,8 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle } from 'lucide-react';
 import { Waveform } from './Waveform';
 import { CuePoint } from './CuePoint';
-import { TracklistImport } from './TracklistImport';
-import { TracklistExport } from './TracklistExport';
+import { TracklistManager } from './TracklistManager';
 import { CuePreview } from './CuePreview';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
@@ -470,12 +469,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               Cue Point setzen
             </Button>
             
-            <TracklistImport 
+            <TracklistManager 
               onImportTracks={handleTracklistImport}
               totalDuration={duration}
-            />
-            
-            <TracklistExport 
               cuePoints={cuePoints}
               filename={file.name}
               performer={performer}
