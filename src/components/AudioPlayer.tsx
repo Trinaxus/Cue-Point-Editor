@@ -332,16 +332,16 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
             <div className="flex gap-2 w-full sm:w-auto">
               <Button
                 onClick={() => document.getElementById('cue-import')?.click()}
-                variant="outline"
-                className="bg-accent/10 border-accent text-accent hover:bg-accent hover:text-background flex-1 sm:flex-none"
+                variant="import"
+                className="flex-1 sm:flex-none"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 CUE laden
               </Button>
               <Button 
                 onClick={exportCueFile}
-                variant="outline"
-                className="bg-secondary/50 border-neon-green text-neon-green hover:bg-neon-green hover:text-background flex-1 sm:flex-none"
+                variant="export"
+                className="flex-1 sm:flex-none"
                 disabled={cuePoints.length === 0}
               >
                 <Download className="w-4 h-4 mr-2" />
@@ -463,8 +463,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
           <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 pt-2">
             <Button
               onClick={() => addCuePoint()}
-              variant="outline"
-              className="bg-cue/10 border-cue/30 text-cue hover:bg-cue/15 hover:text-cue w-full sm:w-auto"
+              variant="cue"
+              className="w-full sm:w-auto"
             >
               Cue Point setzen
             </Button>

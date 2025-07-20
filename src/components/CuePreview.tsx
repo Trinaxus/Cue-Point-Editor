@@ -85,7 +85,7 @@ export const CuePreview: React.FC<CuePreviewProps> = ({ cuePoints, filename, per
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="bg-accent/10 border-accent/30 text-accent hover:bg-accent/15 hover:text-accent w-full sm:w-auto flex items-center space-x-2">
+        <Button variant="preview" className="w-full sm:w-auto flex items-center space-x-2">
           <Eye className="w-4 h-4" />
           <span>CUE Vorschau</span>
         </Button>

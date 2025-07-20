@@ -195,8 +195,8 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
-          variant="outline"
-          className="bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/15 hover:text-green-600 w-full sm:w-auto"
+          variant="tracklist"
+          className="w-full sm:w-auto"
         >
           <FileMusic className="w-4 h-4 mr-2" />
           Tracklist
