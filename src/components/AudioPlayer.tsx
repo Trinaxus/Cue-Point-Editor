@@ -24,7 +24,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [cuePoints, setCuePoints] = useState<CuePointData[]>([]);
   const [waveformData, setWaveformData] = useState<number[]>([]);
-  const [performer, setPerformer] = useState("DJ Set");
+  const [performer, setPerformer] = useState("Set");
 
   useEffect(() => {
     if (file) {
@@ -326,7 +326,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                   setPerformer(e.target.value);
                 }}
                 className="px-3 py-2 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 w-full sm:w-40"
-                placeholder="z.B. DJ Set"
+                placeholder="z.B. Set"
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto">

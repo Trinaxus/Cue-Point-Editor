@@ -37,7 +37,7 @@ All colors MUST be HSL.
     --input: 240 5.9% 90%;
     --ring: 142 71% 45%;
 
-    /* DJ-specific colors */
+    /* Cue Editor specific colors */
     --neon-green: 142 71% 45%;
     --neon-purple: 278 100% 70%;
     --neon-blue: 199 89% 48%;
@@ -89,7 +89,7 @@ All colors MUST be HSL.
     --input: 220 13% 15%;
     --ring: 142 71% 45%;
 
-    /* DJ-specific colors for dark mode */
+    /* Cue Editor specific colors for dark mode */
     --neon-green: 142 71% 45%;
     --neon-purple: 278 100% 70%;
     --neon-blue: 199 89% 48%;

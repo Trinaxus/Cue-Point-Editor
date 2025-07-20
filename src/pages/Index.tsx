@@ -27,7 +27,7 @@ const Index = () => {
               <div className="relative">
                 <img 
                   src={djCueLogo} 
-                  alt="DJ Cue Point Editor Modern Round Logo" 
+                  alt="Cue Point Editor Logo" 
                   className="w-16 h-16 object-contain filter drop-shadow-lg hover:scale-105 transition-transform duration-300 animate-spin"
                   style={{ animationDuration: '20s' }}
                 />
@@ -35,7 +35,7 @@ const Index = () => {
               </div>
               <div className="flex flex-col">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                  DJ Cue Point Editor
+                  Cue Point Editor
                 </h1>
                 <p className="text-sm text-muted-foreground font-medium tracking-wide">
                   Professional Audio Cue Point Management
@@ -53,7 +53,7 @@ const Index = () => {
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold mb-2 text-foreground">
-                Willkommen zum DJ Cue Point Editor
+                Willkommen zum Cue Point Editor
               </h2>
               <p className="text-muted-foreground">
                 Lade eine MP3-Datei hoch, um Cue Points zu setzen und als CUE-Datei zu exportieren
@@ -108,7 +108,7 @@ const Index = () => {
       <div className="border-t border-border bg-card/30 mt-auto relative z-10">
         <div className="container mx-auto px-4 py-6 text-center">
           <p className="text-sm text-muted-foreground">
-            DJ Cue Point Editor - Erstelle professionelle CUE-Dateien für deine DJ Sets
+            Cue Point Editor - Erstelle professionelle CUE-Dateien für deine Sets
           </p>
         </div>
       </div>

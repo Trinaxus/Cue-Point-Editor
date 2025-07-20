@@ -302,7 +302,7 @@ export const CuePoint: React.FC<CuePointProps> = ({
                   id="performer"
                   value={editData.performer}
                   onChange={(e) => setEditData(prev => ({ ...prev, performer: e.target.value }))}
-                  placeholder="z.B. DJ Set"
+                  placeholder="z.B. Set"
                   className="w-full"
                 />
               </div>
