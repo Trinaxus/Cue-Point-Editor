@@ -116,6 +116,22 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     updateCuePoint(id, { time });
   };
 
+  const toggleCueLock = (id: string) => {
+    setCuePoints(cuePoints.map(cue => 
+      cue.id === id ? { ...cue, locked: !cue.locked } : cue
+    ));
+    const cue = cuePoints.find(c => c.id === id);
+    toast.success(cue?.locked ? 'Cue Point entsperrt' : 'Cue Point gesperrt');
+  };
+
+  const toggleCueConfirm = (id: string) => {
+    setCuePoints(cuePoints.map(cue => 
+      cue.id === id ? { ...cue, confirmed: !cue.confirmed } : cue
+    ));
+    const cue = cuePoints.find(c => c.id === id);
+    toast.success(cue?.confirmed ? 'Bestätigung entfernt' : 'Cue Point bestätigt');
+  };
+
   const handleCueFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -369,6 +385,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
           onSeek={seekTo}
           onAddCue={addCuePoint}
           onUpdateCue={updateCueTime}
+          onToggleCueLock={toggleCueLock}
+          onToggleCueConfirm={toggleCueConfirm}
           setWaveformData={setWaveformData}
         />
       </Card>

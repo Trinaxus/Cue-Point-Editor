@@ -5,4 +5,6 @@ export interface CuePointData {
   artist?: string;
   title?: string;
   performer?: string;
+  locked?: boolean;
+  confirmed?: boolean;
 }
