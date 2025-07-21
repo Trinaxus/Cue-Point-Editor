@@ -1,7 +1,7 @@
 
 # Cue Point Editor
 
-![Screenshot](https://tubox.de/WebDisk/uploads/2000/Project_bilder/Bildschirmfoto%202025-07-15%20um%2021.57.15.png)
+![Screenshot](https://github.com/Trinaxus/Cue-Point-Editor/blob/main/public/Bildschirmfoto%202025-07-21%20um%2021.29.30.png)
 **Live Demo:** (https://cue-point-editor.vercel.app/)  
 
 Ein visueller Editor zum präzisen Setzen und Verwalten von Cue Points in Audio/Video-Dateien. Entwickelt für DJs, Podcast-Editoren und Medienproduktion.
