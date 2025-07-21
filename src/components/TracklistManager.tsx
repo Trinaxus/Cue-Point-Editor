@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FileMusic, Upload, FileText, Copy, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
@@ -35,6 +36,7 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
   const [mixTitle, setMixTitle] = useState(() => 
     filename.replace(/\.[^/.]+$/, '') // Entfernt die Dateiendung
   );
+  const [exportFormat, setExportFormat] = useState<'text' | 'table'>('text');
 
   const parseTracklist = (text: string): ParsedTrack[] => {
     const lines = text.split('\n').filter(line => line.trim() !== '');
@@ -157,8 +159,32 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
     return tracklist.trim();
   };
 
+  const generateTableTracklist = () => {
+    if (cuePoints.length === 0) return "";
+
+    const sortedCues = [...cuePoints].sort((a, b) => a.time - b.time);
+    let tracklist = `${mixTitle}\n\n#\tArtist\tTrack\n`;
+
+    sortedCues.forEach((cue, index) => {
+      const trackNumber = index + 1;
+      
+      if (cue.artist && cue.title) {
+        tracklist += `${trackNumber}\t${cue.artist}\t${cue.title}\n`;
+      } else if (cue.name) {
+        const [artist, title] = cue.name.includes(' - ') 
+          ? cue.name.split(' - ', 2) 
+          : ['Unknown Artist', cue.name];
+        tracklist += `${trackNumber}\t${artist}\t${title}\n`;
+      } else {
+        tracklist += `${trackNumber}\tUnknown Artist\tUnknown Track\n`;
+      }
+    });
+
+    return tracklist.trim();
+  };
+
   const copyToClipboard = async () => {
-    const tracklist = generateTracklist();
+    const tracklist = exportFormat === 'table' ? generateTableTracklist() : generateTracklist();
     try {
       await navigator.clipboard.writeText(tracklist);
       toast.success('Tracklist in Zwischenablage kopiert!');
@@ -168,7 +194,7 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
   };
 
   const downloadTracklist = () => {
-    const tracklist = generateTracklist();
+    const tracklist = exportFormat === 'table' ? generateTableTracklist() : generateTracklist();
     const blob = new Blob([tracklist], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     
@@ -189,7 +215,7 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
 02	Wild Dark	The Slide (Original Mix)
 03	Bioslave	Perigäum (Vocal Edit)`;
 
-  const tracklistContent = generateTracklist();
+  const tracklistContent = exportFormat === 'table' ? generateTableTracklist() : generateTracklist();
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -265,6 +291,20 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
                 placeholder="z.B. Mix Set 48"
                 className="mt-1"
               />
+            </div>
+            
+            <div>
+              <Label>Export Format</Label>
+              <RadioGroup value={exportFormat} onValueChange={(value: 'text' | 'table') => setExportFormat(value)} className="mt-2">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="text" id="text" />
+                  <Label htmlFor="text" className="text-sm">Text Format</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="table" id="table" />
+                  <Label htmlFor="table" className="text-sm">Tabellen Format (#&nbsp;&nbsp;&nbsp;&nbsp;Artist&nbsp;&nbsp;&nbsp;&nbsp;Track)</Label>
+                </div>
+              </RadioGroup>
             </div>
             
             <div>
