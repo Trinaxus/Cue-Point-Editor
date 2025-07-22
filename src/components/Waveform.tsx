@@ -228,12 +228,24 @@ export const Waveform: React.FC<WaveformProps> = ({
           ctx.strokeStyle = 'hsl(0, 70%, 30%)';
           ctx.stroke();
           
-          // Draw lock icon (larger, flat design)
+          // Draw lock icon (better padlock design)
           ctx.fillStyle = 'white';
-          ctx.fillRect(iconX + 6, iconY + 1, 8, 5);
-          ctx.fillRect(iconX + 7, iconY - 3, 6, 4);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'white';
+          
+          // Lock body (rectangle)
+          ctx.fillRect(iconX + 6, iconY, 8, 6);
+          
+          // Lock shackle (curved top part)
+          ctx.beginPath();
+          ctx.arc(iconX + 10, iconY - 2, 3, Math.PI, 0, false);
+          ctx.stroke();
+          
+          // Keyhole dot
+          ctx.beginPath();
+          ctx.arc(iconX + 10, iconY + 2, 1, 0, 2 * Math.PI);
           ctx.fillStyle = 'hsl(0, 70%, 40%)';
-          ctx.fillRect(iconX + 7, iconY - 2, 6, 2);
+          ctx.fill();
           
           iconX += 25;
         }
