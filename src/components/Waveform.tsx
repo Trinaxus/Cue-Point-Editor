@@ -200,8 +200,8 @@ export const Waveform: React.FC<WaveformProps> = ({
         
         ctx.beginPath();
         
-        // Draw teardrop: circle at top with pointed bottom
-        const tipHeight = baseRadius * 0.8;
+        // Draw teardrop: circle at top with pointed bottom (elongated)
+        const tipHeight = baseRadius * 1.8; // More elongated downward
         
         // Top semicircle part
         ctx.arc(cueX, 10, baseRadius, Math.PI, 0, false);
