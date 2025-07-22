@@ -195,9 +195,23 @@ export const Waveform: React.FC<WaveformProps> = ({
         ctx.fillStyle = isBeingDragged ? 'hsl(0, 84%, 80%)' : 'hsl(0, 84%, 60%)';
         ctx.fillRect(cueX - 1, 0, 3, height);
         
-        const circleRadius = isBeingDragged ? 7 : isHovered ? 6 : 4;
+        // Draw marker point as teardrop shape
+        const baseRadius = isBeingDragged ? 9 : isHovered ? 7 : 6; // Larger sizes
+        
         ctx.beginPath();
-        ctx.arc(cueX, 10, circleRadius, 0, 2 * Math.PI);
+        
+        // Draw teardrop: circle at top with pointed bottom
+        const tipHeight = baseRadius * 0.8;
+        
+        // Top semicircle part
+        ctx.arc(cueX, 10, baseRadius, Math.PI, 0, false);
+        
+        // Bottom triangle part (tip pointing down)
+        ctx.lineTo(cueX + baseRadius, 10);
+        ctx.lineTo(cueX, 10 + tipHeight);
+        ctx.lineTo(cueX - baseRadius, 10);
+        
+        ctx.closePath();
         ctx.fill();
         
         if (isBeingDragged || isHovered) {
