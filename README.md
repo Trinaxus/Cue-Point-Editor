@@ -9,7 +9,9 @@ Ein visueller Editor zum präzisen Setzen und Verwalten von Cue Points in Audio/
 ## ✨ Features
 - **Echtzeit-Waveform** – Interaktive Darstellung mit Zoom-Funktion
 - **Frame-genaue Marker** – Cue Points mit Millisekunden-Präzision
+- **Marker-Verwaltung** – Sperren/Entsperren und Bestätigen von Cue Points mit visuellen Indikatoren
 - **Import/Export** – Unterstützt JSON, CSV und rekordbox.xml
+- **Tracklist-Export** – Text- und Tabellenformat mit konfigurierbaren Headern
 - **Tastatursteuerung**  
   `Space` = Play/Pause, `M` = Marker setzen, `←`/`→` = Frame-Skipping
 - **Responsive UI** – Optimiert für Desktop (Touch-Unterstützung)
@@ -44,9 +46,13 @@ Ein visueller Editor zum präzisen Setzen und Verwalten von Cue Points in Audio/
 2. **Marker setzen**  
    - Klick auf die Waveform oder `M`-Taste während der Wiedergabe.
    - Marker per Drag verschiebbar.
-3. **Exportieren**  
+   - Rechtsklick auf Marker: Sperren (🔒), Bestätigen (✓), Löschen/Benennen
+3. **Tracklist verwalten**  
+   - Automatische Erkennung von Artist/Title aus Metadaten
+   - Export als Text oder Tabelle mit anpassbaren Headern
+4. **Exportieren**  
    - `STRG + S`: Speichert Projekt als `.json`
-   - Rechtsklick auf Marker: Löschen/Benennen
+   - Tracklist: Wählbare Formate (Text/Tabelle)
 
 ## 🌍 Browser-Support
 ![Chrome](https://img.shields.io/badge/Chrome-✓-green)  
