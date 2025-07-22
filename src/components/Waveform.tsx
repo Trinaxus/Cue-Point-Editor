@@ -215,20 +215,48 @@ export const Waveform: React.FC<WaveformProps> = ({
           ctx.fillText(displayText, cueX + 6, 20);
         }
         
-        const iconY = height - 16;
-        let iconX = cueX - 8;
+        const iconY = height - 20;
+        let iconX = cueX - 16;
         
         if (cue.locked) {
+          // Draw circle background for lock icon
+          ctx.beginPath();
+          ctx.arc(iconX + 8, iconY, 8, 0, 2 * Math.PI);
           ctx.fillStyle = 'hsl(45, 93%, 47%)';
-          ctx.font = '12px Arial';
-          ctx.fillText('🔒', iconX, iconY);
-          iconX += 14;
+          ctx.fill();
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'hsl(45, 93%, 37%)';
+          ctx.stroke();
+          
+          // Draw lock icon (flat design)
+          ctx.fillStyle = 'white';
+          ctx.fillRect(iconX + 5, iconY - 1, 6, 4);
+          ctx.fillRect(iconX + 6, iconY - 4, 4, 3);
+          ctx.fillStyle = 'hsl(45, 93%, 47%)';
+          ctx.fillRect(iconX + 6, iconY - 3, 4, 1);
+          
+          iconX += 20;
         }
         
         if (cue.confirmed) {
+          // Draw circle background for checkmark
+          ctx.beginPath();
+          ctx.arc(iconX + 8, iconY, 8, 0, 2 * Math.PI);
           ctx.fillStyle = 'hsl(142, 71%, 45%)';
-          ctx.font = '12px Arial';
-          ctx.fillText('✓', iconX, iconY);
+          ctx.fill();
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'hsl(142, 71%, 35%)';
+          ctx.stroke();
+          
+          // Draw checkmark (flat design)
+          ctx.strokeStyle = 'white';
+          ctx.lineWidth = 2;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(iconX + 4, iconY);
+          ctx.lineTo(iconX + 7, iconY + 3);
+          ctx.lineTo(iconX + 12, iconY - 2);
+          ctx.stroke();
         }
       }
     });
