@@ -1,8 +1,10 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, Music, FileX, FileText, Download } from 'lucide-react';
+import { Upload, Music, FileX, FileText, Download, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
 import * as ID3 from 'id3js';
@@ -16,6 +18,7 @@ interface FileUploadProps {
 export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFile, onCueImport }) => {
   const [bitrate, setBitrate] = useState<number | null>(null);
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [urlInput, setUrlInput] = useState<string>('');
 
   useEffect(() => {
     if (!selectedFile) {
@@ -88,6 +91,48 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
     onFileSelect(file);
     toast.success(`Audio-Datei geladen: ${file.name}`);
   }, [onFileSelect]);
+
+  const handleUrlLoad = useCallback(async () => {
+    if (!urlInput.trim()) {
+      toast.error('Bitte geben Sie eine URL ein');
+      return;
+    }
+
+    try {
+      // Basic URL validation
+      const url = new URL(urlInput.trim());
+      
+      // Create a temporary audio element to test if the URL is valid
+      const audio = new Audio();
+      audio.crossOrigin = 'anonymous';
+      
+      const loadPromise = new Promise<void>((resolve, reject) => {
+        audio.onloadedmetadata = () => resolve();
+        audio.onerror = () => reject(new Error('Ungültige Audio-URL'));
+        audio.onabort = () => reject(new Error('Laden abgebrochen'));
+      });
+
+      audio.src = url.toString();
+      
+      await loadPromise;
+      
+      // Create a virtual file object for compatibility
+      const response = await fetch(url.toString());
+      const blob = await response.blob();
+      
+      // Extract filename from URL or use default
+      const fileName = url.pathname.split('/').pop() || 'audio-from-url.mp3';
+      const file = new File([blob], fileName, { type: blob.type || 'audio/mpeg' });
+      
+      onFileSelect(file);
+      toast.success(`Audio-URL geladen: ${fileName}`);
+      setUrlInput('');
+      
+    } catch (error) {
+      console.error('URL loading error:', error);
+      toast.error('Fehler beim Laden der Audio-URL. Überprüfen Sie die URL und CORS-Einstellungen.');
+    }
+  }, [urlInput, onFileSelect]);
 
   const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -316,36 +361,81 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
 
   return (
     <Card className="border-2 border-dashed border-border hover:border-primary/50 transition-colors">
-      <div
-        className="p-12 text-center cursor-pointer hover:bg-secondary/20 transition-colors"
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onClick={() => document.getElementById('audio-upload')?.click()}
-      >
-        <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-          <Upload className="w-8 h-8 text-primary" />
-        </div>
-        
-        <h3 className="text-lg font-semibold mb-2 text-foreground">
-          Audio-Datei hochladen
-        </h3>
-        
-        <p className="text-muted-foreground mb-4">
-          Ziehen Sie eine MP3-Datei hierher oder klicken Sie zum Auswählen
-        </p>
-        
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p>Unterstützte Formate: MP3, WAV, M4A</p>
-          <p>Maximale Dateigröße: 500MB</p>
-        </div>
+      <div className="p-8">
+        <Tabs defaultValue="file" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="file">Datei hochladen</TabsTrigger>
+            <TabsTrigger value="url">URL eingeben</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="file" className="mt-6">
+            <div
+              className="p-8 text-center cursor-pointer hover:bg-secondary/20 transition-colors rounded-lg"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onClick={() => document.getElementById('audio-upload')?.click()}
+            >
+              <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                <Upload className="w-8 h-8 text-primary" />
+              </div>
+              
+              <h3 className="text-lg font-semibold mb-2 text-foreground">
+                Audio-Datei hochladen
+              </h3>
+              
+              <p className="text-muted-foreground mb-4">
+                Ziehen Sie eine MP3-Datei hierher oder klicken Sie zum Auswählen
+              </p>
+              
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>Unterstützte Formate: MP3, WAV, M4A</p>
+                <p>Maximale Dateigröße: 500MB</p>
+              </div>
 
-        <input
-          id="audio-upload"
-          type="file"
-          accept="audio/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
+              <input
+                id="audio-upload"
+                type="file"
+                accept="audio/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="url" className="mt-6">
+            <div className="text-center p-8">
+              <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                <Link className="w-8 h-8 text-primary" />
+              </div>
+              
+              <h3 className="text-lg font-semibold mb-2 text-foreground">
+                Audio-URL laden
+              </h3>
+              
+              <p className="text-muted-foreground mb-6">
+                Geben Sie eine direkte URL zu einer Audio-Datei ein
+              </p>
+              
+              <div className="flex gap-2 max-w-md mx-auto">
+                <Input
+                  type="url"
+                  placeholder="https://example.com/audio.mp3"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleUrlLoad()}
+                />
+                <Button onClick={handleUrlLoad}>
+                  Laden
+                </Button>
+              </div>
+              
+              <div className="mt-4 text-sm text-muted-foreground">
+                <p>Hinweis: Die URL muss öffentlich zugänglich sein</p>
+                <p>CORS-Richtlinien des Servers müssen Audio-Streaming erlauben</p>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </Card>
   );
