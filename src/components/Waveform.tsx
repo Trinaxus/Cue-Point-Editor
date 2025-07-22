@@ -216,32 +216,32 @@ export const Waveform: React.FC<WaveformProps> = ({
         }
         
         const iconY = height - 20;
-        let iconX = cueX - 16;
+        let iconX = cueX + 8; // Position icons to the right of the line
         
         if (cue.locked) {
           // Draw circle background for lock icon
           ctx.beginPath();
-          ctx.arc(iconX + 8, iconY, 8, 0, 2 * Math.PI);
-          ctx.fillStyle = 'hsl(45, 93%, 47%)';
+          ctx.arc(iconX + 10, iconY, 10, 0, 2 * Math.PI);
+          ctx.fillStyle = 'hsl(0, 70%, 40%)'; // Dark red
           ctx.fill();
           ctx.lineWidth = 1;
-          ctx.strokeStyle = 'hsl(45, 93%, 37%)';
+          ctx.strokeStyle = 'hsl(0, 70%, 30%)';
           ctx.stroke();
           
-          // Draw lock icon (flat design)
+          // Draw lock icon (larger, flat design)
           ctx.fillStyle = 'white';
-          ctx.fillRect(iconX + 5, iconY - 1, 6, 4);
-          ctx.fillRect(iconX + 6, iconY - 4, 4, 3);
-          ctx.fillStyle = 'hsl(45, 93%, 47%)';
-          ctx.fillRect(iconX + 6, iconY - 3, 4, 1);
+          ctx.fillRect(iconX + 6, iconY + 1, 8, 5);
+          ctx.fillRect(iconX + 7, iconY - 3, 6, 4);
+          ctx.fillStyle = 'hsl(0, 70%, 40%)';
+          ctx.fillRect(iconX + 7, iconY - 2, 6, 2);
           
-          iconX += 20;
+          iconX += 25;
         }
         
         if (cue.confirmed) {
           // Draw circle background for checkmark
           ctx.beginPath();
-          ctx.arc(iconX + 8, iconY, 8, 0, 2 * Math.PI);
+          ctx.arc(iconX + 10, iconY, 10, 0, 2 * Math.PI);
           ctx.fillStyle = 'hsl(142, 71%, 45%)';
           ctx.fill();
           ctx.lineWidth = 1;
@@ -253,9 +253,9 @@ export const Waveform: React.FC<WaveformProps> = ({
           ctx.lineWidth = 2;
           ctx.lineCap = 'round';
           ctx.beginPath();
-          ctx.moveTo(iconX + 4, iconY);
-          ctx.lineTo(iconX + 7, iconY + 3);
-          ctx.lineTo(iconX + 12, iconY - 2);
+          ctx.moveTo(iconX + 5, iconY + 1);
+          ctx.lineTo(iconX + 9, iconY + 4);
+          ctx.lineTo(iconX + 15, iconY - 2);
           ctx.stroke();
         }
       }
