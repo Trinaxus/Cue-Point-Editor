@@ -22,8 +22,8 @@ const buttonVariants = cva(
         cue: "bg-cue/10 border border-cue/30 text-cue shadow-sm hover:bg-cue/25 hover:border-cue/50 hover:scale-[1.02] active:scale-[0.98]",
         tracklist: "bg-green-500/10 border border-green-500/30 text-green-600 shadow-sm hover:bg-green-500/15 hover:border-green-500/40 hover:scale-[1.02] active:scale-[0.98]",
         preview: "bg-accent/10 border border-accent/30 text-accent shadow-sm hover:bg-accent/15 hover:border-accent/40 hover:scale-[1.02] active:scale-[0.98]",
-        import: "bg-accent/10 border border-accent text-accent shadow-sm hover:bg-accent hover:text-background hover:scale-[1.02] active:scale-[0.98]",
-        export: "bg-secondary/50 border border-neon-green text-neon-green shadow-sm hover:bg-neon-green/20 hover:border-neon-green hover:text-neon-green hover:scale-[1.02] active:scale-[0.98]"
+        import: "bg-accent/10 border border-accent/30 text-accent shadow-sm hover:bg-accent/20 hover:border-accent/40 hover:text-accent hover:scale-[1.02] active:scale-[0.98]",
+        export: "bg-secondary/50 border border-neon-green/30 text-neon-green shadow-sm hover:bg-neon-green/20 hover:border-neon-green/40 hover:text-neon-green hover:scale-[1.02] active:scale-[0.98]"
       },
       size: {
         default: "h-10 px-4 py-2",
