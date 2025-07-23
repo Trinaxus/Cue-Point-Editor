@@ -220,7 +220,7 @@ export const Waveform: React.FC<WaveformProps> = ({
           ctx.stroke();
         }
         
-        if (zoomLevel > 2) {
+        if (zoomLevel >= 10) {
           ctx.fillStyle = 'hsl(210, 20%, 85%)';
           ctx.font = '10px monospace';
           const displayText = cue.performer && cue.title 
