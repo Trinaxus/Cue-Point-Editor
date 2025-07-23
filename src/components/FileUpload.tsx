@@ -349,7 +349,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
             onClick={() => onFileSelect(null as any)}
             variant="outline"
             size="sm"
-            className="bg-destructive/10 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 hover:text-destructive"
           >
             <FileX className="w-4 h-4 mr-2" />
             Entfernen
