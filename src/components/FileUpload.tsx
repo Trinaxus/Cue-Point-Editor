@@ -333,13 +333,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
             <div>
               <h3 className="font-semibold text-foreground">{selectedFile.name}</h3>
               <div className="flex flex-wrap gap-2 mt-1">
-                <span className="px-2 py-1 bg-green-500/10 text-xs text-green-700 dark:text-green-300 font-medium border border-green-500/30">
+                <span className="px-1 py-0.5 bg-green-500/10 text-xs text-green-700 dark:text-green-300 font-medium border border-green-500/30 rounded-sm">
                   {formatFileSize(selectedFile.size)}
                 </span>
-                <span className="px-2 py-1 bg-green-500/10 text-xs text-green-700 dark:text-green-300 font-medium border border-green-500/30">
+                <span className="px-1 py-0.5 bg-green-500/10 text-xs text-green-700 dark:text-green-300 font-medium border border-green-500/30 rounded-sm">
                   {selectedFile.type}
                 </span>
-                <span className="px-2 py-1 bg-green-500/10 text-xs text-green-700 dark:text-green-300 font-medium border border-green-500/30">
+                <span className="px-1 py-0.5 bg-green-500/10 text-xs text-green-700 dark:text-green-300 font-medium border border-green-500/30 rounded-sm">
                   {bitrate ? `${bitrate} kbps` : 'Bitrate wird berechnet...'}
                 </span>
               </div>
