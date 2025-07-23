@@ -484,7 +484,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               variant="cue"
               className="w-full sm:w-auto"
             >
-              <Circle className="w-4 h-4 mr-2" />
+              <svg className="w-4 h-4 mr-2" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 2C6.5 2 5.5 3 5.5 4.5C5.5 6 8 10 8 10S10.5 6 10.5 4.5C10.5 3 9.5 2 8 2Z" />
+              </svg>
               Cue Point setzen
             </Button>
             
