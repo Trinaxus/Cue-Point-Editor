@@ -15,7 +15,6 @@ interface WaveformProps {
   onAddCue: (time: number) => void;
   onUpdateCue: (id: string, time: number) => void;
   onToggleCueLock: (id: string) => void;
-  onToggleCueConfirm: (id: string) => void;
   setWaveformData: (data: number[]) => void;
 }
 
@@ -28,7 +27,6 @@ export const Waveform: React.FC<WaveformProps> = ({
   onAddCue,
   onUpdateCue,
   onToggleCueLock,
-  onToggleCueConfirm,
   setWaveformData
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -260,30 +258,10 @@ export const Waveform: React.FC<WaveformProps> = ({
           ctx.arc(iconX + 10, iconY + 2, 1, 0, 2 * Math.PI);
           ctx.fillStyle = 'hsl(0, 70%, 40%)';
           ctx.fill();
-          
-          iconX += 25;
         }
         
-        if (cue.confirmed) {
-          // Draw circle background for checkmark
-          ctx.beginPath();
-          ctx.arc(iconX + 10, iconY, 10, 0, 2 * Math.PI);
-          ctx.fillStyle = 'hsl(142, 71%, 45%)';
-          ctx.fill();
-          ctx.lineWidth = 1;
-          ctx.strokeStyle = 'hsl(142, 71%, 35%)';
-          ctx.stroke();
-          
-          // Draw checkmark (flat design)
-          ctx.strokeStyle = 'white';
-          ctx.lineWidth = 2;
-          ctx.lineCap = 'round';
-          ctx.beginPath();
-          ctx.moveTo(iconX + 5, iconY + 1);
-          ctx.lineTo(iconX + 9, iconY + 4);
-          ctx.lineTo(iconX + 15, iconY - 2);
-          ctx.stroke();
-        }
+        iconX += 25;
+        
       }
     });
   }, [waveformData, currentTime, duration, cuePoints, zoomLevel, panOffset, isDraggingCue, hoveredCuePoint]);
@@ -667,18 +645,6 @@ export const Waveform: React.FC<WaveformProps> = ({
                 <Lock className="w-3 h-3 mr-2" />
                 {selectedCueForOptions.locked ? 'Entsperren' : 'Sperren'}
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start h-8 px-2"
-                onClick={() => {
-                  onToggleCueConfirm(selectedCueForOptions.id);
-                  setSelectedCueForOptions(null);
-                }}
-              >
-                <Check className="w-3 h-3 mr-2" />
-                {selectedCueForOptions.confirmed ? 'Unbestätigt' : 'Bestätigen'}
-              </Button>
             </div>
           )}
         </PopoverContent>
@@ -696,7 +662,6 @@ export const Waveform: React.FC<WaveformProps> = ({
           <div className="font-medium">
             Track {getTrackNumber(hoveredCue)}
             {hoveredCue.locked && <Lock className="w-3 h-3 inline ml-1" />}
-            {hoveredCue.confirmed && <Check className="w-3 h-3 inline ml-1" />}
           </div>
           <div>
             {formatTime(hoveredCue.time)}

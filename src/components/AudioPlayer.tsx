@@ -386,7 +386,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
           onAddCue={addCuePoint}
           onUpdateCue={updateCueTime}
           onToggleCueLock={toggleCueLock}
-          onToggleCueConfirm={toggleCueConfirm}
           setWaveformData={setWaveformData}
         />
       </Card>
