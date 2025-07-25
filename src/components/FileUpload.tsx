@@ -102,23 +102,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
       // Basic URL validation
       const url = new URL(urlInput.trim());
       
-      // Create a temporary audio element to test if the URL is valid
-      const audio = new Audio();
-      audio.crossOrigin = 'anonymous';
+      // Try to fetch the file first to check for CORS issues
+      const response = await fetch(url.toString(), { mode: 'cors' });
       
-      const loadPromise = new Promise<void>((resolve, reject) => {
-        audio.onloadedmetadata = () => resolve();
-        audio.onerror = () => reject(new Error('Ungültige Audio-URL'));
-        audio.onabort = () => reject(new Error('Laden abgebrochen'));
-      });
-
-      audio.src = url.toString();
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
-      await loadPromise;
-      
-      // Create a virtual file object for compatibility
-      const response = await fetch(url.toString());
       const blob = await response.blob();
+      
+      // Verify it's an audio file
+      if (!blob.type.startsWith('audio/')) {
+        throw new Error('Die URL verweist nicht auf eine gültige Audio-Datei');
+      }
       
       // Extract filename from URL or use default
       const fileName = url.pathname.split('/').pop() || 'audio-from-url.mp3';
@@ -130,7 +126,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
       
     } catch (error) {
       console.error('URL loading error:', error);
-      toast.error('Fehler beim Laden der Audio-URL. Überprüfen Sie die URL und CORS-Einstellungen.');
+      
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        toast.error('CORS-Fehler: Der Server erlaubt keine Cross-Origin-Anfragen. Laden Sie die Datei herunter und verwenden Sie den Datei-Upload.');
+      } else if (error instanceof Error && error.message.includes('CORS')) {
+        toast.error('CORS-Fehler: Der Server erlaubt keine Cross-Origin-Anfragen. Laden Sie die Datei herunter und verwenden Sie den Datei-Upload.');
+      } else {
+        toast.error(`Fehler beim Laden der Audio-URL: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
+      }
     }
   }, [urlInput, onFileSelect]);
 
