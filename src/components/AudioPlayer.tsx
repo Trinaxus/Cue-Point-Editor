@@ -451,9 +451,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
             <Button
               onClick={togglePlayPause}
               size="lg"
-              className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 transition-all duration-300 ${
+              className={`relative w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 transition-all duration-300 ${
                 isPlaying 
-                  ? 'bg-primary/90 border-primary shadow-[0_0_30px_hsl(var(--primary)/0.6)] animate-pulse-slow' 
+                  ? 'bg-primary/90 border-primary shadow-[0_0_30px_hsl(var(--primary)/0.6)] animate-pulse' 
                   : 'bg-primary hover:bg-primary/90 border-primary hover:shadow-[0_0_25px_hsl(var(--primary)/0.4)]'
               } text-primary-foreground group`}
             >
