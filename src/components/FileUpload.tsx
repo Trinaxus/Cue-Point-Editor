@@ -93,14 +93,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
   }, [onFileSelect]);
 
   const handleUrlLoad = useCallback(async () => {
+    console.log('handleUrlLoad called, urlInput:', urlInput);
+    
     if (!urlInput.trim()) {
+      console.log('No URL input provided');
       toast.error('Bitte geben Sie eine URL ein');
       return;
     }
 
     try {
+      console.log('Starting URL load process...');
       // Basic URL validation
       const url = new URL(urlInput.trim());
+      console.log('URL parsed successfully:', url.toString());
       
       // Try to fetch the file first to check for CORS issues
       const response = await fetch(url.toString(), { mode: 'cors' });
