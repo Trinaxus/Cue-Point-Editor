@@ -448,31 +448,26 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               <ChevronLeft className="w-4 h-4" />
             </Button>
             
-<Button
-  onClick={togglePlayPause}
-  size="lg"
-  className={`relative w-16 h-16 sm:w-20 sm:h-20 aspect-square overflow-hidden rounded-full border-2 transition-all duration-300
-    ${
-      isPlaying
-        ? 'bg-primary/90 border-primary shadow-[0_0_30px_hsl(var(--primary)/0.6)] animate-pulse'
-        : 'bg-primary hover:bg-primary/90 border-primary hover:shadow-[0_0_25px_hsl(var(--primary)/0.4)]'
-    }
-    text-primary-foreground group`}
->
-  <div
-    className={`absolute inset-0 rounded-full transition-all duration-300 pointer-events-none
-      ${
-        isPlaying
-          ? 'shadow-[inset_0_0_20px_hsl(var(--primary)/0.3),0_0_40px_hsl(var(--primary)/0.5)]'
-          : 'group-hover:shadow-[inset_0_0_15px_hsl(var(--primary)/0.2),0_0_20px_hsl(var(--primary)/0.3)]'
-      }`}
-  />
-  {isPlaying ? (
-    <Pause className="w-6 h-6 sm:w-8 sm:h-8 relative z-10" />
-  ) : (
-    <Play className="w-6 h-6 sm:w-8 sm:h-8 relative z-10 ml-1" />
-  )}
-</Button>
+            <Button
+              onClick={togglePlayPause}
+              size="lg"
+              className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 transition-all duration-300 ${
+                isPlaying 
+                  ? 'bg-primary/90 border-primary shadow-[0_0_30px_hsl(var(--primary)/0.6)] animate-pulse-slow' 
+                  : 'bg-primary hover:bg-primary/90 border-primary hover:shadow-[0_0_25px_hsl(var(--primary)/0.4)]'
+              } text-primary-foreground group`}
+            >
+              <div className={`absolute inset-0 rounded-full transition-all duration-300 ${
+                isPlaying 
+                  ? 'shadow-[inset_0_0_20px_hsl(var(--primary)/0.3),0_0_40px_hsl(var(--primary)/0.5)]' 
+                  : 'group-hover:shadow-[inset_0_0_15px_hsl(var(--primary)/0.2),0_0_20px_hsl(var(--primary)/0.3)]'
+              }`} />
+              {isPlaying ? (
+                <Pause className="w-6 h-6 sm:w-8 sm:h-8 relative z-10" />
+              ) : (
+                <Play className="w-6 h-6 sm:w-8 sm:h-8 relative z-10 ml-1" />
+              )}
+            </Button>
 
             <Button
               variant="outline"
