@@ -392,11 +392,29 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
 
       {/* Transport Controls */}
       <Card className="p-4 sm:p-6 border-border">
-        <div className="space-y-4">
-          {/* Time Display */}
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+        <div className="space-y-6">
+          {/* Digital Time Display */}
+          <div className="bg-black/90 rounded-lg p-4 border border-primary/20">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="space-y-1">
+                <div className="text-xs text-primary/60 uppercase tracking-wider">Aktuell</div>
+                <div className="font-mono text-lg text-primary font-bold">
+                  {formatTime(currentTime)}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs text-primary/60 uppercase tracking-wider">Restzeit</div>
+                <div className="font-mono text-lg text-orange-400 font-bold">
+                  -{formatTime(duration - currentTime)}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs text-primary/60 uppercase tracking-wider">Gesamtzeit</div>
+                <div className="font-mono text-lg text-white font-bold">
+                  {formatTime(duration)}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Progress Bar */}
@@ -433,12 +451,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
             <Button
               onClick={togglePlayPause}
               size="lg"
-              className="bg-primary hover:bg-primary/80 text-primary-foreground w-12 h-12 sm:w-16 sm:h-16 rounded-full"
+              className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 transition-all duration-300 ${
+                isPlaying 
+                  ? 'bg-primary/90 border-primary shadow-[0_0_30px_hsl(var(--primary)/0.6)] animate-pulse' 
+                  : 'bg-primary hover:bg-primary/90 border-primary hover:shadow-[0_0_25px_hsl(var(--primary)/0.4)]'
+              } text-primary-foreground group`}
             >
+              <div className={`absolute inset-0 rounded-full transition-all duration-300 ${
+                isPlaying 
+                  ? 'shadow-[inset_0_0_20px_hsl(var(--primary)/0.3),0_0_40px_hsl(var(--primary)/0.5)]' 
+                  : 'group-hover:shadow-[inset_0_0_15px_hsl(var(--primary)/0.2),0_0_20px_hsl(var(--primary)/0.3)]'
+              }`} />
               {isPlaying ? (
-                <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
+                <Pause className="w-6 h-6 sm:w-8 sm:h-8 relative z-10" />
               ) : (
-                <Play className="w-5 h-5 sm:w-6 sm:h-6" />
+                <Play className="w-6 h-6 sm:w-8 sm:h-8 relative z-10 ml-1" />
               )}
             </Button>
 
