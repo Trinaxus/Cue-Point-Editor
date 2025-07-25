@@ -51,5 +51,5 @@
   <circle cx="256" cy="256" r="20" fill="hsl(0, 0%, 0%)"/>
   
   <!-- DJ initials in center -->
-  <text x="256" y="266" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">*</text>
+  <text x="256" y="266" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold"></text>
 </svg>
