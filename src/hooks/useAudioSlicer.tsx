@@ -24,26 +24,21 @@ export const useAudioSlicer = () => {
       .substring(0, 100); // Begrenze Länge
   };
 
-  const generateFilename = (index: number, cue: CuePointData, nextCue?: CuePointData, format: 'underscore' | 'space' = 'underscore'): string => {
+  const generateFilename = (index: number, cue: CuePointData, nextCue?: CuePointData): string => {
     const trackNumber = (index + 1).toString().padStart(2, '0');
     
     // Verwende Artist + Name wenn verfügbar
     let trackName = '';
     if (cue.artist && cue.name) {
-      if (format === 'space') {
-        trackName = `${cue.artist} - ${cue.name}`;
-      } else {
-        trackName = `${cue.artist}_-_${cue.name}`;
-      }
+      trackName = `${cue.artist}_-_${cue.name}`;
     } else if (cue.title) {
       trackName = cue.title;
     } else {
       trackName = cue.name;
     }
     
-    const sanitizedName = format === 'space' ? trackName : sanitizeFilename(trackName);
-    const separator = format === 'space' ? ' - ' : '-';
-    return `${trackNumber}${separator}${sanitizedName}.mp3`;
+    const sanitizedName = sanitizeFilename(trackName);
+    return `${trackNumber}-${sanitizedName}.mp3`;
   };
 
   const loadFFmpeg = async (): Promise<void> => {
@@ -174,7 +169,7 @@ export const useAudioSlicer = () => {
     }
   };
 
-  const sliceAudio = async (audioFile: File, cuePoints: CuePointData[], filename: string, format: 'underscore' | 'space' = 'underscore'): Promise<AudioSliceResult[]> => {
+  const sliceAudio = async (audioFile: File, cuePoints: CuePointData[], filename: string): Promise<AudioSliceResult[]> => {
     if (cuePoints.length === 0) {
       throw new Error('Keine Cue Points vorhanden');
     }
@@ -234,7 +229,7 @@ export const useAudioSlicer = () => {
         
         // Zu WAV konvertieren
         const wavData = await audioBufferToWavFile(slicedBuffer);
-        const sliceFilename = generateFilename(i, currentCue, nextCue, format).replace('.mp3', '.wav');
+        const sliceFilename = generateFilename(i, currentCue, nextCue).replace('.mp3', '.wav');
         const blob = new Blob([wavData], { type: 'audio/wav' });
         
         results.push({
