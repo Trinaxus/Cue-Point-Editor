@@ -84,22 +84,21 @@ export const CuePreview: React.FC<CuePreviewProps> = ({ cuePoints, filename, per
   }
   
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
+    <TooltipProvider>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
               <Button variant="preview" className="w-full sm:w-auto flex items-center space-x-2">
                 <Eye className="w-4 h-4" />
                 <span>CUE Vorschau</span>
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>CUE-Datei Vorschau anzeigen und exportieren</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </DialogTrigger>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>CUE-Datei Vorschau anzeigen und exportieren</p>
+          </TooltipContent>
+        </Tooltip>
       
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
@@ -115,41 +114,37 @@ export const CuePreview: React.FC<CuePreviewProps> = ({ cuePoints, filename, per
               {cuePoints.length} Cue Points • {filename.replace(/\.[^/.]+$/, '')}.cue
             </p>
             <div className="flex space-x-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyToClipboard}
-                      className="flex items-center space-x-1"
-                    >
-                      <Copy className="w-4 h-4" />
-                      <span>Kopieren</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>CUE-Inhalt in die Zwischenablage kopieren</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleDownload}
-                      size="sm"
-                      className="flex items-center space-x-1"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>CUE-Datei herunterladen</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyToClipboard}
+                    className="flex items-center space-x-1"
+                  >
+                    <Copy className="w-4 h-4" />
+                    <span>Kopieren</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>CUE-Inhalt in die Zwischenablage kopieren</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleDownload}
+                    size="sm"
+                    className="flex items-center space-x-1"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>CUE-Datei herunterladen</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
           
@@ -168,5 +163,6 @@ export const CuePreview: React.FC<CuePreviewProps> = ({ cuePoints, filename, per
         </div>
       </DialogContent>
     </Dialog>
+    </TooltipProvider>
   );
 };
