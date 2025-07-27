@@ -32,7 +32,6 @@ export const CuePoint: React.FC<CuePointProps> = ({
   const [editData, setEditData] = useState({
     artist: '',
     title: '',
-    performer: '',
     time: 0,
   });
 
@@ -42,11 +41,10 @@ export const CuePoint: React.FC<CuePointProps> = ({
       setEditData({
         artist: cuePoint.artist || '',
         title: cuePoint.title || '',
-        performer: cuePoint.performer || '',
         time: cuePoint.time,
       });
     }
-  }, [isEditing, cuePoint.artist, cuePoint.title, cuePoint.performer, cuePoint.time]);
+  }, [isEditing, cuePoint.artist, cuePoint.title, cuePoint.time]);
 
   const formatTime = (time: number) => {
     const hours = Math.floor(time / 3600);
@@ -76,7 +74,6 @@ export const CuePoint: React.FC<CuePointProps> = ({
       name: displayName,
       artist: editData.artist,
       title: editData.title,
-      performer: editData.performer,
       time: editData.time
     });
     setIsEditing(false);
@@ -86,7 +83,6 @@ export const CuePoint: React.FC<CuePointProps> = ({
     setEditData({
       artist: cuePoint.artist || '',
       title: cuePoint.title || '',
-      performer: cuePoint.performer || '',
       time: cuePoint.time,
     });
     setIsEditing(false);
@@ -294,18 +290,6 @@ export const CuePoint: React.FC<CuePointProps> = ({
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="performer" className="text-sm font-medium">
-                  Performer
-                </Label>
-                <Input
-                  id="performer"
-                  value={editData.performer}
-                  onChange={(e) => setEditData(prev => ({ ...prev, performer: e.target.value }))}
-                  placeholder="z.B. Set"
-                  className="w-full"
-                />
-              </div>
               
               <div className="flex space-x-2 pt-4">
                 <Button
