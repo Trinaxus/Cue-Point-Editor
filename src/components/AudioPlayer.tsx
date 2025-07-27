@@ -75,9 +75,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     setBpm(null);
     
     try {
+      // Check if Web Audio API is supported
+      if (!window.AudioContext && !(window as any).webkitAudioContext) {
+        throw new Error('Web Audio API nicht unterstützt');
+      }
+
       const arrayBuffer = await file.arrayBuffer();
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      
+      let audioBuffer;
+      try {
+        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      } catch (decodeError) {
+        await audioContext.close();
+        throw new Error('Audio-Datei kann nicht dekodiert werden');
+      }
       
       const detectedBpm = await detectBPM(audioBuffer);
       setBpm(detectedBpm);
@@ -91,7 +103,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
       await audioContext.close();
     } catch (error) {
       console.error('BPM analysis error:', error);
-      toast.error('Fehler bei der BPM-Analyse');
+      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler bei der BPM-Analyse';
+      toast.error(errorMessage);
     } finally {
       setIsAnalyzingBpm(false);
     }
