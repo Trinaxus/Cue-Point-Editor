@@ -314,7 +314,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     
     if (nextCue) {
       seekTo(nextCue.time);
-      toast.success(`Zu Cue Point "${nextCue.name}" gesprungen`);
+      const displayText = nextCue.artist 
+        ? `${nextCue.artist} - ${nextCue.name}` 
+        : nextCue.name;
+      toast.success(`Zu Cue Point "${displayText}" gesprungen`);
     }
   };
 
