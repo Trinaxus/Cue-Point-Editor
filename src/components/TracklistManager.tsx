@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FileMusic, Upload, FileText, Copy, Download } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
 
@@ -220,13 +221,22 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="tracklist"
-          className="w-full sm:w-auto"
-        >
-          <FileMusic className="w-4 h-4 mr-2" />
-          Tracklist
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="tracklist"
+                className="w-full sm:w-auto"
+              >
+                <FileMusic className="w-4 h-4 mr-2" />
+                Tracklist
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Tracklist importieren oder exportieren</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </DialogTrigger>
       
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -318,23 +328,41 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
             </div>
             
             <div className="flex gap-2 justify-end">
-              <Button
-                onClick={copyToClipboard}
-                variant="outline"
-                className="flex items-center gap-2"
-                disabled={!tracklistContent}
-              >
-                <Copy className="w-4 h-4" />
-                Kopieren
-              </Button>
-              <Button
-                onClick={downloadTracklist}
-                className="flex items-center gap-2"
-                disabled={!tracklistContent}
-              >
-                <Download className="w-4 h-4" />
-                Download
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={copyToClipboard}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                      disabled={!tracklistContent}
+                    >
+                      <Copy className="w-4 h-4" />
+                      Kopieren
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Tracklist in die Zwischenablage kopieren</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={downloadTracklist}
+                      className="flex items-center gap-2"
+                      disabled={!tracklistContent}
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Tracklist als TXT-Datei herunterladen</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </TabsContent>
         </Tabs>

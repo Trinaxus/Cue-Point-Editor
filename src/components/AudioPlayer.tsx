@@ -598,16 +598,25 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 pt-2">
-            <Button
-              onClick={() => addCuePoint()}
-              variant="cue"
-              className="w-full sm:w-auto flex items-center justify-center gap-3"
-            >
-              <svg className="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C9.5 2 7.5 4 7.5 6.5C7.5 9.5 12 18 12 18S16.5 9.5 16.5 6.5C16.5 4 14.5 2 12 2Z" />
-              </svg>
-              Cue Point setzen
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => addCuePoint()}
+                    variant="cue"
+                    className="w-full sm:w-auto flex items-center justify-center gap-3"
+                  >
+                    <svg className="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C9.5 2 7.5 4 7.5 6.5C7.5 9.5 12 18 12 18S16.5 9.5 16.5 6.5C16.5 4 14.5 2 12 2Z" />
+                    </svg>
+                    Cue Point setzen
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Neuen Cue Point an der aktuellen Wiedergabeposition setzen</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
             <TracklistManager 
               onImportTracks={handleTracklistImport}

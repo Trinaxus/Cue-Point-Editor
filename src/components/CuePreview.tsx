@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { Eye, Copy, Download } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
 
@@ -85,10 +86,19 @@ export const CuePreview: React.FC<CuePreviewProps> = ({ cuePoints, filename, per
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="preview" className="w-full sm:w-auto flex items-center space-x-2">
-          <Eye className="w-4 h-4" />
-          <span>CUE Vorschau</span>
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="preview" className="w-full sm:w-auto flex items-center space-x-2">
+                <Eye className="w-4 h-4" />
+                <span>CUE Vorschau</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>CUE-Datei Vorschau anzeigen und exportieren</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </DialogTrigger>
       
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -105,23 +115,41 @@ export const CuePreview: React.FC<CuePreviewProps> = ({ cuePoints, filename, per
               {cuePoints.length} Cue Points • {filename.replace(/\.[^/.]+$/, '')}.cue
             </p>
             <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyToClipboard}
-                className="flex items-center space-x-1"
-              >
-                <Copy className="w-4 h-4" />
-                <span>Kopieren</span>
-              </Button>
-              <Button
-                onClick={handleDownload}
-                size="sm"
-                className="flex items-center space-x-1"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download</span>
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyToClipboard}
+                      className="flex items-center space-x-1"
+                    >
+                      <Copy className="w-4 h-4" />
+                      <span>Kopieren</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>CUE-Inhalt in die Zwischenablage kopieren</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleDownload}
+                      size="sm"
+                      className="flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>CUE-Datei herunterladen</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
           
