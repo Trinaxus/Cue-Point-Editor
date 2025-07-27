@@ -394,7 +394,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
       <Card className="p-4 sm:p-6 border-border">
         <div className="space-y-6">
           {/* Digital Time Display */}
-          <div className="bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
+          <div className="bg-muted/20 backdrop-blur-sm rounded-lg p-4 border border-border">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div className="space-y-1">
                 <div className="text-xs text-muted-foreground uppercase tracking-wider">Aktuell</div>
@@ -404,7 +404,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               </div>
               <div className="space-y-1">
                 <div className="text-xs text-muted-foreground uppercase tracking-wider">Restzeit</div>
-                <div className="font-mono text-lg text-orange-500 dark:text-orange-400 font-bold">
+                <div className="font-mono text-lg text-destructive font-bold">
                   -{formatTime(duration - currentTime)}
                 </div>
               </div>
