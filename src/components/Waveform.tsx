@@ -610,10 +610,6 @@ export const Waveform: React.FC<WaveformProps> = ({
         </div>
       </div>
       
-      <div className="text-xs text-muted-foreground">
-        {isLoading ? 'Generiere Waveform...' : `Klick: Springen • Shift+Klick: Cue Point • Drag Cue: Verschieben • Rechtsklick: Optionen • Strg+Drag: Pan${isWheelZoomEnabled ? ' • Scroll: Zoom' : ''}`}
-      </div>
-      
       <div 
         ref={containerRef}
         className="relative w-full h-40 bg-waveform-bg rounded-lg border border-border overflow-hidden cursor-pointer"
@@ -638,6 +634,11 @@ export const Waveform: React.FC<WaveformProps> = ({
             }}
           />
         )}
+      </div>
+
+      {/* Control Instructions */}
+      <div className="text-xs text-muted-foreground text-center">
+        {isLoading ? 'Generiere Waveform...' : `Klick: Springen • Shift+Klick: Cue Point • Drag Cue: Verschieben • Rechtsklick: Optionen • Strg+Drag: Pan${isWheelZoomEnabled ? ' • Scroll: Zoom' : ''}`}
       </div>
 
       {/* Timeline Slider */}
