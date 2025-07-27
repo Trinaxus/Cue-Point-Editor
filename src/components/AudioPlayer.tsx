@@ -465,15 +465,29 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      onClick={handleSliceAudio}
-                      variant="outline"
-                      className="flex-1 sm:flex-none bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 hover:text-destructive"
-                      disabled={cuePoints.length === 0 || isSlicing}
-                    >
-                      <Scissors className="w-4 h-4 mr-2" />
-                      {isSlicing ? 'Schneidet...' : 'Audio schneiden'}
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Dateinamen-Format:</label>
+                        <Select value={filenameFormat} onValueChange={(value: 'underscore' | 'space') => setFilenameFormat(value)}>
+                          <SelectTrigger className="w-48 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="underscore">Mit Unterstrichen (02-Artist_-_Title)</SelectItem>
+                            <SelectItem value="space">Mit Leerzeichen (02 - Artist - Title)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button 
+                        onClick={handleSliceAudio}
+                        variant="outline"
+                        className="bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 hover:text-destructive"
+                        disabled={cuePoints.length === 0 || isSlicing}
+                      >
+                        <Scissors className="w-4 h-4 mr-2" />
+                        {isSlicing ? 'Schneidet...' : 'Audio schneiden'}
+                      </Button>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="max-w-xs text-sm">
