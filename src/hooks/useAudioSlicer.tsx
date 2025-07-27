@@ -178,20 +178,15 @@ export const useAudioSlicer = () => {
     setProgress(0);
     
     try {
-      console.log('Starting sliceAudio process...');
-      // FFmpeg laden (falls noch nicht geschehen)
-      console.log('Loading FFmpeg...');
-      await loadFFmpeg();
-      console.log('FFmpeg loaded successfully');
-      
-      toast.success('Audio-Datei wird geladen...');
+      toast.info('Audio-Datei wird verarbeitet...');
+      console.log('Starting audio slicing (WAV format)...');
       
       // Audio-Datei laden und dekodieren
       const arrayBuffer = await audioFile.arrayBuffer();
       const audioContext = new AudioContext();
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
       
-      toast.success('Audio dekodiert, MP3-Segmente werden erstellt...');
+      toast.success('Audio dekodiert, WAV-Segmente werden erstellt...');
       
       const sortedCues = [...cuePoints].sort((a, b) => a.time - b.time);
       const results: AudioSliceResult[] = [];
@@ -234,11 +229,8 @@ export const useAudioSlicer = () => {
         
         // Zu WAV konvertieren
         const wavData = await audioBufferToWavFile(slicedBuffer);
-        
-        // Mit FFmpeg zu MP3 konvertieren
-        const sliceFilename = generateFilename(i, currentCue, nextCue);
-        const mp3Data = await convertWavToMp3(wavData, `slice_${i}`);
-        const blob = new Blob([mp3Data], { type: 'audio/mp3' });
+        const sliceFilename = generateFilename(i, currentCue, nextCue).replace('.mp3', '.wav');
+        const blob = new Blob([wavData], { type: 'audio/wav' });
         
         results.push({
           filename: sliceFilename,
@@ -251,7 +243,7 @@ export const useAudioSlicer = () => {
         setProgress(progressPercent);
       }
       
-      toast.success(`${results.length} MP3-Dateien erfolgreich erstellt!`);
+      toast.success(`${results.length} WAV-Dateien erfolgreich erstellt! (MP3 funktioniert leider nicht in dieser Umgebung)`);
       return results;
       
     } catch (error) {
