@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle, Scissors } from 'lucide-react';
 import { Waveform } from './Waveform';
 import { CuePoint } from './CuePoint';
@@ -28,6 +29,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const [cuePoints, setCuePoints] = useState<CuePointData[]>([]);
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [performer, setPerformer] = useState("Set");
+  const [filenameFormat, setFilenameFormat] = useState<'underscore' | 'space'>('underscore');
   
   // Audio Slicer Hook
   const { sliceAudio, downloadSlices, isSlicing, progress } = useAudioSlicer();
@@ -355,7 +357,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     }
 
     try {
-      const slices = await sliceAudio(file, cuePoints, file.name);
+      const slices = await sliceAudio(file, cuePoints, file.name, filenameFormat);
       await downloadSlices(slices);
     } catch (error) {
       console.error('Fehler beim Schneiden der Audio-Datei:', error);
@@ -411,6 +413,18 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+              <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Dateinamen-Format:</label>
+              <Select value={filenameFormat} onValueChange={(value: 'underscore' | 'space') => setFilenameFormat(value)}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="underscore">Mit Unterstrichen (02-Artist_-_Title)</SelectItem>
+                  <SelectItem value="space">Mit Leerzeichen (02 - Artist - Title)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
               <TooltipProvider>
