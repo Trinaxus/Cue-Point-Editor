@@ -18,9 +18,9 @@ export const useAudioSlicer = () => {
 
   const sanitizeFilename = (text: string): string => {
     return text
-      .replace(/[^\w\s-]/g, '') // Entferne Sonderzeichen außer Wort-Zeichen, Leerzeichen und Bindestriche
-      .replace(/\s+/g, '_') // Ersetze Leerzeichen mit Unterstrichen
-      .replace(/-+/g, '-') // Ersetze mehrfache Bindestriche
+      .replace(/[<>:"/\\|?*]/g, '') // Entferne nur wirklich problematische Zeichen für Dateinamen
+      .replace(/\s+/g, ' ') // Normalisiere Leerzeichen
+      .trim() // Entferne führende/nachfolgende Leerzeichen
       .substring(0, 100); // Begrenze Länge
   };
 
@@ -30,7 +30,7 @@ export const useAudioSlicer = () => {
     // Verwende Artist + Name wenn verfügbar
     let trackName = '';
     if (cue.artist && cue.name) {
-      trackName = `${cue.artist}_-_${cue.name}`;
+      trackName = `${cue.artist} - ${cue.name}`;
     } else if (cue.title) {
       trackName = cue.title;
     } else {
@@ -38,7 +38,7 @@ export const useAudioSlicer = () => {
     }
     
     const sanitizedName = sanitizeFilename(trackName);
-    return `${trackNumber}-${sanitizedName}.mp3`;
+    return `${trackNumber} - ${sanitizedName}.mp3`;
   };
 
   const loadFFmpeg = async (): Promise<void> => {
