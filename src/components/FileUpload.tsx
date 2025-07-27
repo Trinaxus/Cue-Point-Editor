@@ -83,8 +83,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
       return;
     }
 
-    if (file.size > 500 * 1024 * 1024) { // 500MB limit
-      toast.error('Datei ist zu groß (max. 500MB)');
+    if (file.size > 3 * 1024 * 1024 * 1024) { // 3GB limit
+      toast.error('Datei ist zu groß (max. 3GB)');
       return;
     }
 
@@ -397,7 +397,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
               
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>Unterstützte Formate: MP3, WAV, M4A</p>
-                <p>Maximale Dateigröße: 500MB</p>
+                <p>Maximale Dateigröße: 3GB</p>
               </div>
 
               <input
