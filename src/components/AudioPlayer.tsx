@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle, Scissors } from 'lucide-react';
 import { Waveform } from './Waveform';
 import { CuePoint } from './CuePoint';
@@ -420,15 +421,28 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                 <Download className="w-4 h-4 mr-2" />
                 Export CUE
               </Button>
-              <Button 
-                onClick={handleSliceAudio}
-                variant="outline"
-                className="flex-1 sm:flex-none bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 hover:text-destructive"
-                disabled={cuePoints.length === 0 || isSlicing}
-              >
-                <Scissors className="w-4 h-4 mr-2" />
-                {isSlicing ? 'Schneidet...' : 'Audio schneiden'}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={handleSliceAudio}
+                      variant="outline"
+                      className="flex-1 sm:flex-none bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 hover:text-destructive"
+                      disabled={cuePoints.length === 0 || isSlicing}
+                    >
+                      <Scissors className="w-4 h-4 mr-2" />
+                      {isSlicing ? 'Schneidet...' : 'Audio schneiden'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs text-sm">
+                      Erstellt WAV-Dateien basierend auf den Cue Points. 
+                      MP3-Konvertierung ist leider in dieser Umgebung nicht verfügbar, 
+                      aber WAV-Dateien können extern zu MP3 konvertiert werden.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         </div>
