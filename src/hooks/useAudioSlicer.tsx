@@ -47,25 +47,36 @@ export const useAudioSlicer = () => {
     toast.info('FFmpeg wird geladen... (einmalig ~25MB)');
     
     try {
+      console.log('Starting FFmpeg load...');
       const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      
       ffmpeg.on('log', ({ message }) => {
         console.log('FFmpeg:', message);
       });
       
       ffmpeg.on('progress', ({ progress }) => {
+        console.log('FFmpeg progress:', progress);
         setProgress(progress * 100);
       });
 
+      console.log('Fetching FFmpeg core files...');
+      
+      const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
+      const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
+      
+      console.log('Core files fetched, initializing FFmpeg...');
+
       await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        coreURL,
+        wasmURL,
       });
       
+      console.log('FFmpeg load completed');
       setIsFFmpegLoaded(true);
       toast.success('FFmpeg erfolgreich geladen!');
     } catch (error) {
       console.error('FFmpeg Ladefehler:', error);
-      toast.error('FFmpeg konnte nicht geladen werden');
+      toast.error(`FFmpeg konnte nicht geladen werden: ${error.message}`);
       throw error;
     }
   };
