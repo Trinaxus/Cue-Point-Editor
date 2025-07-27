@@ -48,10 +48,9 @@ export const useAudioSlicer = () => {
     
     try {
       console.log('Starting FFmpeg load...');
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
       
       ffmpeg.on('log', ({ message }) => {
-        console.log('FFmpeg:', message);
+        console.log('FFmpeg log:', message);
       });
       
       ffmpeg.on('progress', ({ progress }) => {
@@ -59,24 +58,33 @@ export const useAudioSlicer = () => {
         setProgress(progress * 100);
       });
 
-      console.log('Fetching FFmpeg core files...');
+      console.log('Loading FFmpeg with timeout...');
       
-      const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
-      const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
-      
-      console.log('Core files fetched, initializing FFmpeg...');
-
-      await ffmpeg.load({
-        coreURL,
-        wasmURL,
+      // Timeout für FFmpeg-Laden hinzufügen
+      const loadPromise = ffmpeg.load({
+        coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+        wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+        classWorkerURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.worker.js'
       });
       
-      console.log('FFmpeg load completed');
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('FFmpeg laden dauert zu lange (Timeout nach 30s)')), 30000);
+      });
+      
+      await Promise.race([loadPromise, timeoutPromise]);
+      
+      console.log('FFmpeg load completed successfully');
       setIsFFmpegLoaded(true);
       toast.success('FFmpeg erfolgreich geladen!');
     } catch (error) {
       console.error('FFmpeg Ladefehler:', error);
-      toast.error(`FFmpeg konnte nicht geladen werden: ${error.message}`);
+      setIsFFmpegLoaded(false);
+      
+      if (error.message.includes('Timeout')) {
+        toast.error('FFmpeg laden dauert zu lange - bitte Seite neu laden');
+      } else {
+        toast.error(`FFmpeg Fehler: ${error.message}`);
+      }
       throw error;
     }
   };
