@@ -25,15 +25,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const [cuePoints, setCuePoints] = useState<CuePointData[]>([]);
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [performer, setPerformer] = useState("Set");
-  const [bpm, setBpm] = useState<number | null>(null);
-  const [isAnalyzingBpm, setIsAnalyzingBpm] = useState(false);
 
   useEffect(() => {
     if (file) {
       const url = URL.createObjectURL(file);
       setAudioUrl(url);
-      // Automatically analyze BPM when file is loaded
-      analyzeBPM(file);
       return () => URL.revokeObjectURL(url);
     }
   }, [file]);
@@ -69,154 +65,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
       audioRef.current.volume = volume[0] / 100;
     }
   }, [volume]);
-
-  const analyzeBPM = async (file: File) => {
-    setIsAnalyzingBpm(true);
-    setBpm(null);
-    
-    try {
-      // Check if Web Audio API is supported
-      if (!window.AudioContext && !(window as any).webkitAudioContext) {
-        throw new Error('Web Audio API nicht unterstützt');
-      }
-
-      const arrayBuffer = await file.arrayBuffer();
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      let audioBuffer;
-      try {
-        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      } catch (decodeError) {
-        await audioContext.close();
-        throw new Error('Audio-Datei kann nicht dekodiert werden');
-      }
-      
-      const detectedBpm = await detectBPM(audioBuffer);
-      setBpm(detectedBpm);
-      
-      if (detectedBpm) {
-        toast.success(`BPM erkannt: ${detectedBpm}`);
-      } else {
-        toast.info('BPM konnte nicht automatisch erkannt werden');
-      }
-      
-      await audioContext.close();
-    } catch (error) {
-      console.error('BPM analysis error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler bei der BPM-Analyse';
-      toast.error(errorMessage);
-    } finally {
-      setIsAnalyzingBpm(false);
-    }
-  };
-
-  const detectBPM = async (audioBuffer: AudioBuffer): Promise<number | null> => {
-    const sampleRate = audioBuffer.sampleRate;
-    const channelData = audioBuffer.getChannelData(0);
-    
-    // Use a smaller portion (first 10 seconds) and downsample for performance
-    const analysisLength = Math.min(sampleRate * 10, channelData.length);
-    const downsampleRate = 4; // Take every 4th sample to reduce data size
-    const sampledLength = Math.floor(analysisLength / downsampleRate);
-    const data = new Float32Array(sampledLength);
-    
-    for (let i = 0; i < sampledLength; i++) {
-      data[i] = channelData[i * downsampleRate];
-    }
-    
-    const effectiveSampleRate = sampleRate / downsampleRate;
-    
-    // Apply low-pass filter to focus on bass frequencies
-    const filteredData = applyLowPassFilter(data, effectiveSampleRate, 200);
-    
-    // Detect peaks (beats)
-    const peaks = detectPeaks(filteredData, effectiveSampleRate);
-    
-    if (peaks.length < 8) return null; // Need enough peaks for analysis
-    
-    // Calculate intervals between peaks
-    const intervals: number[] = [];
-    for (let i = 1; i < peaks.length; i++) {
-      intervals.push(peaks[i] - peaks[i - 1]);
-    }
-    
-    // Find the most common interval (tempo)
-    const bpm = calculateBPMFromIntervals(intervals, effectiveSampleRate);
-    
-    // Validate BPM range (typical music range)
-    if (bpm && bpm >= 60 && bpm <= 200) {
-      return Math.round(bpm);
-    }
-    
-    return null;
-  };
-
-  const applyLowPassFilter = (data: Float32Array, sampleRate: number, cutoff: number): Float32Array => {
-    const filtered = new Float32Array(data.length);
-    const RC = 1.0 / (cutoff * 2 * Math.PI);
-    const dt = 1.0 / sampleRate;
-    const alpha = dt / (RC + dt);
-    
-    filtered[0] = data[0];
-    for (let i = 1; i < data.length; i++) {
-      filtered[i] = alpha * data[i] + (1 - alpha) * filtered[i - 1];
-    }
-    
-    return filtered;
-  };
-
-  const detectPeaks = (data: Float32Array, sampleRate: number): number[] => {
-    const peaks: number[] = [];
-    const minPeakDistance = sampleRate * 0.2; // Minimum 200ms between peaks
-    
-    // Find maximum value efficiently without spreading large array
-    let maxValue = 0;
-    for (let i = 0; i < data.length; i++) {
-      if (Math.abs(data[i]) > maxValue) {
-        maxValue = Math.abs(data[i]);
-      }
-    }
-    const threshold = maxValue * 0.3; // 30% of max amplitude
-    
-    for (let i = 1; i < data.length - 1; i++) {
-      if (Math.abs(data[i]) > threshold && 
-          Math.abs(data[i]) > Math.abs(data[i - 1]) && 
-          Math.abs(data[i]) > Math.abs(data[i + 1]) &&
-          (peaks.length === 0 || i - peaks[peaks.length - 1] > minPeakDistance)) {
-        peaks.push(i);
-      }
-    }
-    
-    return peaks;
-  };
-
-  const calculateBPMFromIntervals = (intervals: number[], sampleRate: number): number | null => {
-    if (intervals.length === 0) return null;
-    
-    // Convert intervals to BPM values
-    const bpmValues = intervals.map(interval => 60 / (interval / sampleRate));
-    
-    // Find the most common BPM using clustering
-    const histogram: { [key: number]: number } = {};
-    
-    bpmValues.forEach(bpm => {
-      const rounded = Math.round(bpm);
-      histogram[rounded] = (histogram[rounded] || 0) + 1;
-    });
-    
-    // Find the most frequent BPM
-    let maxCount = 0;
-    let mostFrequentBPM = 0;
-    
-    Object.entries(histogram).forEach(([bpm, count]) => {
-      if (count > maxCount) {
-        maxCount = count;
-        mostFrequentBPM = parseInt(bpm);
-      }
-    });
-    
-    return mostFrequentBPM;
-  };
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
@@ -482,19 +330,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               {formatTime(duration)} 
               <Circle className="w-3 h-3 fill-current" />
               {cuePoints.length} Cue Points
-              {(bpm || isAnalyzingBpm) && (
-                <>
-                  <Circle className="w-3 h-3 fill-current" />
-                  {isAnalyzingBpm ? (
-                    <span className="flex items-center gap-1">
-                      <div className="animate-spin rounded-full h-3 w-3 border-b border-primary"></div>
-                      BPM wird analysiert...
-                    </span>
-                  ) : (
-                    <span className="font-mono font-bold text-primary">{bpm} BPM</span>
-                  )}
-                </>
-              )}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
