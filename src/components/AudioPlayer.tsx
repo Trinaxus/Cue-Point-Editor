@@ -545,9 +545,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
             <Button
               onClick={() => addCuePoint()}
               variant="cue"
-              className="w-full sm:w-auto flex items-center justify-center"
+              className="w-full sm:w-auto flex items-center justify-center gap-3"
             >
-              <svg className="w-5 h-5 mr-2 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C9.5 2 7.5 4 7.5 6.5C7.5 9.5 12 18 12 18S16.5 9.5 16.5 6.5C16.5 4 14.5 2 12 2Z" />
               </svg>
               Cue Point setzen
