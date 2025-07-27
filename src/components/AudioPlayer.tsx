@@ -160,12 +160,20 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const detectPeaks = (data: Float32Array, sampleRate: number): number[] => {
     const peaks: number[] = [];
     const minPeakDistance = sampleRate * 0.2; // Minimum 200ms between peaks
-    const threshold = Math.max(...Array.from(data)) * 0.3; // 30% of max amplitude
+    
+    // Find maximum value efficiently without spreading large array
+    let maxValue = 0;
+    for (let i = 0; i < data.length; i++) {
+      if (Math.abs(data[i]) > maxValue) {
+        maxValue = Math.abs(data[i]);
+      }
+    }
+    const threshold = maxValue * 0.3; // 30% of max amplitude
     
     for (let i = 1; i < data.length - 1; i++) {
-      if (data[i] > threshold && 
-          data[i] > data[i - 1] && 
-          data[i] > data[i + 1] &&
+      if (Math.abs(data[i]) > threshold && 
+          Math.abs(data[i]) > Math.abs(data[i - 1]) && 
+          Math.abs(data[i]) > Math.abs(data[i + 1]) &&
           (peaks.length === 0 || i - peaks[peaks.length - 1] > minPeakDistance)) {
         peaks.push(i);
       }
