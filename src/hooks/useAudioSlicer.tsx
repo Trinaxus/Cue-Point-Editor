@@ -62,69 +62,50 @@ export const useAudioSlicer = () => {
       }
     }
     
-    // Konvertiere zu MP3
-    const mp3Blob = await audioBufferToMp3(slicedBuffer);
-    return mp3Blob;
+    // Konvertiere zu WAV (MP3 encoding ist zu komplex für Browser)
+    const wavBlob = await audioBufferToWav(slicedBuffer);
+    return wavBlob;
   };
 
-  const audioBufferToMp3 = async (audioBuffer: AudioBuffer): Promise<Blob> => {
-    // Dynamisch lamejs importieren
-    const lamejs = await import('lamejs');
+  const audioBufferToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
+    const numberOfChannels = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+    const length = audioBuffer.length;
+    const arrayBuffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
+    const view = new DataView(arrayBuffer);
     
-    const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
-    const mp3Data = [];
-    
-    const sampleBlockSize = 1152; // Standard MP3 Block-Größe
-    
-    if (audioBuffer.numberOfChannels === 1) {
-      // Mono
-      const samples = audioBuffer.getChannelData(0);
-      const sampleCount = samples.length;
-      
-      for (let i = 0; i < sampleCount; i += sampleBlockSize) {
-        const sampleChunk = samples.subarray(i, i + sampleBlockSize);
-        const mp3buf = mp3encoder.encodeBuffer(convertFloat32ToInt16(sampleChunk));
-        if (mp3buf.length > 0) {
-          mp3Data.push(mp3buf);
-        }
+    // WAV-Header schreiben
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
       }
-    } else {
-      // Stereo
-      const left = audioBuffer.getChannelData(0);
-      const right = audioBuffer.getChannelData(1);
-      const sampleCount = left.length;
-      
-      for (let i = 0; i < sampleCount; i += sampleBlockSize) {
-        const leftChunk = left.subarray(i, i + sampleBlockSize);
-        const rightChunk = right.subarray(i, i + sampleBlockSize);
-        const mp3buf = mp3encoder.encodeBuffer(
-          convertFloat32ToInt16(leftChunk),
-          convertFloat32ToInt16(rightChunk)
-        );
-        if (mp3buf.length > 0) {
-          mp3Data.push(mp3buf);
-        }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + length * numberOfChannels * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numberOfChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+    view.setUint16(32, numberOfChannels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, length * numberOfChannels * 2, true);
+    
+    // Audio-Daten schreiben
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      for (let channel = 0; channel < numberOfChannels; channel++) {
+        const sample = Math.max(-1, Math.min(1, audioBuffer.getChannelData(channel)[i]));
+        view.setInt16(offset, sample * 0x7FFF, true);
+        offset += 2;
       }
     }
     
-    // Finale MP3-Daten
-    const mp3buf = mp3encoder.flush();
-    if (mp3buf.length > 0) {
-      mp3Data.push(mp3buf);
-    }
-    
-    return new Blob(mp3Data, { type: 'audio/mp3' });
-  };
-
-  const convertFloat32ToInt16 = (buffer: Float32Array): Int16Array => {
-    const l = buffer.length;
-    const buf = new Int16Array(l);
-    
-    for (let i = 0; i < l; i++) {
-      buf[i] = Math.min(1, buffer[i]) * 0x7FFF;
-    }
-    
-    return buf;
+    return new Blob([arrayBuffer], { type: 'audio/wav' });
   };
 
   const sliceAudio = async (audioFile: File, cuePoints: CuePointData[], filename: string): Promise<AudioSliceResult[]> => {
