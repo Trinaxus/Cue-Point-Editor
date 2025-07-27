@@ -114,15 +114,23 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     const sampleRate = audioBuffer.sampleRate;
     const channelData = audioBuffer.getChannelData(0);
     
-    // Use a portion of the track (first 30 seconds for speed)
-    const analysisLength = Math.min(sampleRate * 30, channelData.length);
-    const data = channelData.slice(0, analysisLength);
+    // Use a smaller portion (first 10 seconds) and downsample for performance
+    const analysisLength = Math.min(sampleRate * 10, channelData.length);
+    const downsampleRate = 4; // Take every 4th sample to reduce data size
+    const sampledLength = Math.floor(analysisLength / downsampleRate);
+    const data = new Float32Array(sampledLength);
+    
+    for (let i = 0; i < sampledLength; i++) {
+      data[i] = channelData[i * downsampleRate];
+    }
+    
+    const effectiveSampleRate = sampleRate / downsampleRate;
     
     // Apply low-pass filter to focus on bass frequencies
-    const filteredData = applyLowPassFilter(data, sampleRate, 200);
+    const filteredData = applyLowPassFilter(data, effectiveSampleRate, 200);
     
     // Detect peaks (beats)
-    const peaks = detectPeaks(filteredData, sampleRate);
+    const peaks = detectPeaks(filteredData, effectiveSampleRate);
     
     if (peaks.length < 8) return null; // Need enough peaks for analysis
     
@@ -133,7 +141,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     }
     
     // Find the most common interval (tempo)
-    const bpm = calculateBPMFromIntervals(intervals, sampleRate);
+    const bpm = calculateBPMFromIntervals(intervals, effectiveSampleRate);
     
     // Validate BPM range (typical music range)
     if (bpm && bpm >= 60 && bpm <= 200) {
