@@ -29,6 +29,24 @@ export const Waveform: React.FC<WaveformProps> = ({
   onToggleCueLock,
   setWaveformData
 }) => {
+  // Get current active track
+  const getCurrentTrack = () => {
+    if (cuePoints.length === 0) return null;
+    
+    const sortedCues = [...cuePoints].sort((a, b) => a.time - b.time);
+    
+    for (let i = 0; i < sortedCues.length; i++) {
+      if (currentTime >= sortedCues[i].time) {
+        if (i === sortedCues.length - 1 || currentTime < sortedCues[i + 1].time) {
+          return sortedCues[i];
+        }
+      }
+    }
+    
+    return null;
+  };
+
+  const currentTrack = getCurrentTrack();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [waveformData, setLocalWaveformData] = useState<number[]>([]);
@@ -522,6 +540,31 @@ export const Waveform: React.FC<WaveformProps> = ({
 
   return (
     <div className="space-y-3">
+      {/* Current Track Display */}
+      {currentTrack && (
+        <div className="bg-card/50 backdrop-blur-sm rounded-lg p-3 border border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center">
+                <span className="text-sm font-bold text-primary">
+                  {getTrackNumber(currentTrack)}
+                </span>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">
+                  {currentTrack.performer && currentTrack.title 
+                    ? `${currentTrack.performer} - ${currentTrack.title}`
+                    : currentTrack.name}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Aktueller Track • {formatTime(currentTrack.time)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-medium text-foreground">Waveform</h3>
         <div className="flex items-center space-x-2">
