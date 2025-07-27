@@ -219,11 +219,11 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
   const tracklistContent = exportFormat === 'table' ? generateTableTracklist() : generateTracklist();
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
+    <TooltipProvider>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
               <Button
                 variant="tracklist"
                 className="w-full sm:w-auto"
@@ -231,13 +231,12 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
                 <FileMusic className="w-4 h-4 mr-2" />
                 Tracklist
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Tracklist importieren oder exportieren</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </DialogTrigger>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Tracklist importieren oder exportieren</p>
+          </TooltipContent>
+        </Tooltip>
       
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
@@ -368,5 +367,6 @@ export const TracklistManager: React.FC<TracklistManagerProps> = ({
         </Tabs>
       </DialogContent>
     </Dialog>
+    </TooltipProvider>
   );
 };
