@@ -422,7 +422,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               </Button>
               <Button 
                 onClick={handleSliceAudio}
-                variant="outline"
+                variant="destructive"
                 className="flex-1 sm:flex-none"
                 disabled={cuePoints.length === 0 || isSlicing}
               >
