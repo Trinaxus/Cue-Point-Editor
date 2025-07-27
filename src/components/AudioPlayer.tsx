@@ -393,15 +393,24 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
               <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Performer:</label>
-              <input
-                type="text"
-                value={performer}
-                onChange={(e) => {
-                  setPerformer(e.target.value);
-                }}
-                className="px-3 py-2 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 w-full sm:w-40"
-                placeholder="z.B. Set"
-              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <input
+                      type="text"
+                      value={performer}
+                      onChange={(e) => {
+                        setPerformer(e.target.value);
+                      }}
+                      className="px-3 py-2 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 w-full sm:w-40"
+                      placeholder="z.B. Set"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Haupt-Performer/Artist dieses Projekts - wird in CUE-Dateien und Exports verwendet</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
               <TooltipProvider>
