@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle, Scissors } from 'lucide-react';
 import { Waveform } from './Waveform';
 import { CuePoint } from './CuePoint';
 import { TracklistManager } from './TracklistManager';
 import { CuePreview } from './CuePreview';
+import { useAudioSlicer } from '@/hooks/useAudioSlicer';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
 
@@ -25,6 +27,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const [cuePoints, setCuePoints] = useState<CuePointData[]>([]);
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [performer, setPerformer] = useState("Set");
+  
+  // Audio Slicer Hook
+  const { sliceAudio, downloadSlices, isSlicing, progress } = useAudioSlicer();
 
   useEffect(() => {
     if (file) {
@@ -342,6 +347,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     toast.success('CUE-Datei erfolgreich exportiert!');
   };
 
+  const handleSliceAudio = async () => {
+    if (!file || cuePoints.length === 0) {
+      toast.error('Keine Datei oder Cue Points vorhanden');
+      return;
+    }
+
+    try {
+      const slices = await sliceAudio(file, cuePoints, file.name);
+      await downloadSlices(slices);
+    } catch (error) {
+      console.error('Fehler beim Schneiden der Audio-Datei:', error);
+      toast.error(`Fehler beim Schneiden: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
+    }
+  };
+
   const formatTime = (time: number) => {
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time % 3600) / 60);
@@ -400,6 +420,15 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                 <Download className="w-4 h-4 mr-2" />
                 Export CUE
               </Button>
+              <Button 
+                onClick={handleSliceAudio}
+                variant="destructive"
+                className="flex-1 sm:flex-none"
+                disabled={cuePoints.length === 0 || isSlicing}
+              >
+                <Scissors className="w-4 h-4 mr-2" />
+                {isSlicing ? 'Schneidet...' : 'Audio schneiden'}
+              </Button>
             </div>
           </div>
         </div>
@@ -426,6 +455,19 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
           setWaveformData={setWaveformData}
         />
       </Card>
+
+      {/* Progress während Audio-Schnitt */}
+      {isSlicing && (
+        <Card className="p-4 border-border">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">Audio wird geschnitten...</span>
+              <span className="text-sm text-muted-foreground">{Math.round(progress)}%</span>
+            </div>
+            <Progress value={progress} className="w-full" />
+          </div>
+        </Card>
+      )}
 
       {/* Transport Controls */}
       <Card className="p-4 sm:p-6 border-border">
