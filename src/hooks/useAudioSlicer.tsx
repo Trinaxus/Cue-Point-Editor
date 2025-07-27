@@ -112,28 +112,42 @@ export const useAudioSlicer = () => {
   };
 
   const convertWavToMp3 = async (wavData: Uint8Array, filename: string): Promise<Uint8Array> => {
+    console.log(`Converting WAV to MP3: ${filename}, size: ${wavData.length} bytes`);
     const inputFilename = `temp_${filename}.wav`;
     const outputFilename = `temp_${filename}.mp3`;
     
-    // WAV-Datei in FFmpeg schreiben
-    await ffmpeg.writeFile(inputFilename, wavData);
-    
-    // MP3-Konvertierung mit hoher Qualität
-    await ffmpeg.exec([
-      '-i', inputFilename,
-      '-b:a', '320k',    // 320 kbps Bitrate
-      '-q:a', '0',       // Höchste Qualität
-      outputFilename
-    ]);
-    
-    // MP3-Datei lesen
-    const mp3Data = await ffmpeg.readFile(outputFilename) as Uint8Array;
-    
-    // Temporäre Dateien löschen
-    await ffmpeg.deleteFile(inputFilename);
-    await ffmpeg.deleteFile(outputFilename);
-    
-    return mp3Data;
+    try {
+      // WAV-Datei in FFmpeg schreiben
+      console.log(`Writing WAV file: ${inputFilename}`);
+      await ffmpeg.writeFile(inputFilename, wavData);
+      console.log(`WAV file written successfully`);
+      
+      // MP3-Konvertierung mit hoher Qualität
+      console.log(`Starting MP3 conversion with FFmpeg...`);
+      await ffmpeg.exec([
+        '-i', inputFilename,
+        '-b:a', '320k',    // 320 kbps Bitrate
+        '-q:a', '0',       // Höchste Qualität
+        outputFilename
+      ]);
+      console.log(`MP3 conversion completed`);
+      
+      // MP3-Datei lesen
+      console.log(`Reading MP3 file: ${outputFilename}`);
+      const mp3Data = await ffmpeg.readFile(outputFilename) as Uint8Array;
+      console.log(`MP3 file read successfully, size: ${mp3Data.length} bytes`);
+      
+      // Temporäre Dateien löschen
+      console.log(`Cleaning up temporary files...`);
+      await ffmpeg.deleteFile(inputFilename);
+      await ffmpeg.deleteFile(outputFilename);
+      console.log(`Cleanup completed for ${filename}`);
+      
+      return mp3Data;
+    } catch (error) {
+      console.error(`Error converting ${filename} to MP3:`, error);
+      throw error;
+    }
   };
 
   const sliceAudio = async (audioFile: File, cuePoints: CuePointData[], filename: string): Promise<AudioSliceResult[]> => {
@@ -145,8 +159,11 @@ export const useAudioSlicer = () => {
     setProgress(0);
     
     try {
+      console.log('Starting sliceAudio process...');
       // FFmpeg laden (falls noch nicht geschehen)
+      console.log('Loading FFmpeg...');
       await loadFFmpeg();
+      console.log('FFmpeg loaded successfully');
       
       toast.success('Audio-Datei wird geladen...');
       
