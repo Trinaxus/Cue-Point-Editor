@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle, Scissors } from 'lucide-react';
 import { Waveform } from './Waveform';
 import { CuePoint } from './CuePoint';
@@ -30,6 +31,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [performer, setPerformer] = useState("Set");
   const [filenameFormat, setFilenameFormat] = useState<'underscore' | 'space'>('underscore');
+  const [showSliceDialog, setShowSliceDialog] = useState(false);
   
   // Audio Slicer Hook
   const { sliceAudio, downloadSlices, isSlicing, progress } = useAudioSlicer();
@@ -359,6 +361,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     try {
       const slices = await sliceAudio(file, cuePoints, file.name, filenameFormat);
       await downloadSlices(slices);
+      setShowSliceDialog(false);
     } catch (error) {
       console.error('Fehler beim Schneiden der Audio-Datei:', error);
       toast.error(`Fehler beim Schneiden: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
@@ -414,18 +417,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-              <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Dateinamen-Format:</label>
-              <Select value={filenameFormat} onValueChange={(value: 'underscore' | 'space') => setFilenameFormat(value)}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="underscore">Mit Unterstrichen (02-Artist_-_Title)</SelectItem>
-                  <SelectItem value="space">Mit Leerzeichen (02 - Artist - Title)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="flex gap-2 w-full sm:w-auto">
               <TooltipProvider>
                 <Tooltip>
@@ -462,42 +453,59 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Dateinamen-Format:</label>
-                        <Select value={filenameFormat} onValueChange={(value: 'underscore' | 'space') => setFilenameFormat(value)}>
-                          <SelectTrigger className="w-48 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="underscore">Mit Unterstrichen (02-Artist_-_Title)</SelectItem>
-                            <SelectItem value="space">Mit Leerzeichen (02 - Artist - Title)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button 
-                        onClick={handleSliceAudio}
-                        variant="outline"
-                        className="bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 hover:text-destructive"
-                        disabled={cuePoints.length === 0 || isSlicing}
-                      >
+              <Dialog open={showSliceDialog} onOpenChange={setShowSliceDialog}>
+                <DialogTrigger asChild>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline"
+                          className="flex-1 sm:flex-none bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 hover:text-destructive"
+                          disabled={cuePoints.length === 0 || isSlicing}
+                        >
+                          <Scissors className="w-4 h-4 mr-2" />
+                          {isSlicing ? 'Schneidet...' : 'Audio schneiden'}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs text-sm">
+                          Erstellt WAV-Dateien basierend auf den Cue Points. 
+                          MP3-Konvertierung ist leider in dieser Umgebung nicht verfügbar, 
+                          aber WAV-Dateien können extern zu MP3 konvertiert werden.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Audio schneiden</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground block mb-2">Dateinamen-Format:</label>
+                      <Select value={filenameFormat} onValueChange={(value: 'underscore' | 'space') => setFilenameFormat(value)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="underscore">Mit Unterstrichen (02-Artist_-_Title)</SelectItem>
+                          <SelectItem value="space">Mit Leerzeichen (02 - Artist - Title)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" onClick={() => setShowSliceDialog(false)}>
+                        Abbrechen
+                      </Button>
+                      <Button onClick={handleSliceAudio} disabled={isSlicing}>
                         <Scissors className="w-4 h-4 mr-2" />
                         {isSlicing ? 'Schneidet...' : 'Audio schneiden'}
                       </Button>
                     </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs text-sm">
-                      Erstellt WAV-Dateien basierend auf den Cue Points. 
-                      MP3-Konvertierung ist leider in dieser Umgebung nicht verfügbar, 
-                      aber WAV-Dateien können extern zu MP3 konvertiert werden.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
