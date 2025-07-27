@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { CuePointData } from '@/types/CuePoint';
 import { toast } from 'sonner';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 interface AudioSliceResult {
   filename: string;
@@ -11,6 +13,8 @@ interface AudioSliceResult {
 export const useAudioSlicer = () => {
   const [isSlicing, setIsSlicing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [ffmpeg] = useState(() => new FFmpeg());
+  const [isFFmpegLoaded, setIsFFmpegLoaded] = useState(false);
 
   const sanitizeFilename = (text: string): string => {
     return text
@@ -37,37 +41,36 @@ export const useAudioSlicer = () => {
     return `${trackNumber}-${sanitizedName}.mp3`;
   };
 
-  const audioBufferToBlob = async (audioBuffer: AudioBuffer, startTime: number, endTime: number): Promise<Blob> => {
-    const audioContext = new AudioContext({ sampleRate: audioBuffer.sampleRate });
+  const loadFFmpeg = async (): Promise<void> => {
+    if (isFFmpegLoaded) return;
     
-    // Berechne Start- und End-Samples
-    const startSample = Math.floor(startTime * audioBuffer.sampleRate);
-    const endSample = Math.floor(endTime * audioBuffer.sampleRate);
-    const duration = endSample - startSample;
+    toast.info('FFmpeg wird geladen... (einmalig ~25MB)');
     
-    // Erstelle neuen AudioBuffer für den Ausschnitt
-    const slicedBuffer = audioContext.createBuffer(
-      audioBuffer.numberOfChannels,
-      duration,
-      audioBuffer.sampleRate
-    );
-    
-    // Kopiere Audio-Daten für jeden Kanal
-    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-      const originalData = audioBuffer.getChannelData(channel);
-      const slicedData = slicedBuffer.getChannelData(channel);
+    try {
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      ffmpeg.on('log', ({ message }) => {
+        console.log('FFmpeg:', message);
+      });
       
-      for (let i = 0; i < duration; i++) {
-        slicedData[i] = originalData[startSample + i] || 0;
-      }
+      ffmpeg.on('progress', ({ progress }) => {
+        setProgress(progress * 100);
+      });
+
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+      
+      setIsFFmpegLoaded(true);
+      toast.success('FFmpeg erfolgreich geladen!');
+    } catch (error) {
+      console.error('FFmpeg Ladefehler:', error);
+      toast.error('FFmpeg konnte nicht geladen werden');
+      throw error;
     }
-    
-    // Konvertiere zu WAV (MP3 encoding ist zu komplex für Browser)
-    const wavBlob = await audioBufferToWav(slicedBuffer);
-    return wavBlob;
   };
 
-  const audioBufferToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
+  const audioBufferToWavFile = async (audioBuffer: AudioBuffer): Promise<Uint8Array> => {
     const numberOfChannels = audioBuffer.numberOfChannels;
     const sampleRate = audioBuffer.sampleRate;
     const length = audioBuffer.length;
@@ -105,7 +108,32 @@ export const useAudioSlicer = () => {
       }
     }
     
-    return new Blob([arrayBuffer], { type: 'audio/wav' });
+    return new Uint8Array(arrayBuffer);
+  };
+
+  const convertWavToMp3 = async (wavData: Uint8Array, filename: string): Promise<Uint8Array> => {
+    const inputFilename = `temp_${filename}.wav`;
+    const outputFilename = `temp_${filename}.mp3`;
+    
+    // WAV-Datei in FFmpeg schreiben
+    await ffmpeg.writeFile(inputFilename, wavData);
+    
+    // MP3-Konvertierung mit hoher Qualität
+    await ffmpeg.exec([
+      '-i', inputFilename,
+      '-b:a', '320k',    // 320 kbps Bitrate
+      '-q:a', '0',       // Höchste Qualität
+      outputFilename
+    ]);
+    
+    // MP3-Datei lesen
+    const mp3Data = await ffmpeg.readFile(outputFilename) as Uint8Array;
+    
+    // Temporäre Dateien löschen
+    await ffmpeg.deleteFile(inputFilename);
+    await ffmpeg.deleteFile(outputFilename);
+    
+    return mp3Data;
   };
 
   const sliceAudio = async (audioFile: File, cuePoints: CuePointData[], filename: string): Promise<AudioSliceResult[]> => {
@@ -117,6 +145,9 @@ export const useAudioSlicer = () => {
     setProgress(0);
     
     try {
+      // FFmpeg laden (falls noch nicht geschehen)
+      await loadFFmpeg();
+      
       toast.success('Audio-Datei wird geladen...');
       
       // Audio-Datei laden und dekodieren
@@ -124,7 +155,7 @@ export const useAudioSlicer = () => {
       const audioContext = new AudioContext();
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
       
-      toast.success('Audio dekodiert, Schnitte werden erstellt...');
+      toast.success('Audio dekodiert, MP3-Segmente werden erstellt...');
       
       const sortedCues = [...cuePoints].sort((a, b) => a.time - b.time);
       const results: AudioSliceResult[] = [];
@@ -141,12 +172,41 @@ export const useAudioSlicer = () => {
           continue;
         }
         
+        toast.info(`Erstelle Track ${i + 1}/${sortedCues.length}...`);
+        
+        // Audio-Segment erstellen
+        const audioContext2 = new AudioContext({ sampleRate: audioBuffer.sampleRate });
+        const startSample = Math.floor(startTime * audioBuffer.sampleRate);
+        const endSample = Math.floor(endTime * audioBuffer.sampleRate);
+        const duration = endSample - startSample;
+        
+        const slicedBuffer = audioContext2.createBuffer(
+          audioBuffer.numberOfChannels,
+          duration,
+          audioBuffer.sampleRate
+        );
+        
+        // Audio-Daten kopieren
+        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+          const originalData = audioBuffer.getChannelData(channel);
+          const slicedData = slicedBuffer.getChannelData(channel);
+          
+          for (let j = 0; j < duration; j++) {
+            slicedData[j] = originalData[startSample + j] || 0;
+          }
+        }
+        
+        // Zu WAV konvertieren
+        const wavData = await audioBufferToWavFile(slicedBuffer);
+        
+        // Mit FFmpeg zu MP3 konvertieren
         const sliceFilename = generateFilename(i, currentCue, nextCue);
-        const blob = await audioBufferToBlob(audioBuffer, startTime, endTime);
+        const mp3Data = await convertWavToMp3(wavData, `slice_${i}`);
+        const blob = new Blob([mp3Data], { type: 'audio/mp3' });
         
         results.push({
           filename: sliceFilename,
-          audioBuffer,
+          audioBuffer: slicedBuffer,
           blob
         });
         
@@ -155,7 +215,7 @@ export const useAudioSlicer = () => {
         setProgress(progressPercent);
       }
       
-      toast.success(`${results.length} Audio-Teile erfolgreich erstellt!`);
+      toast.success(`${results.length} MP3-Dateien erfolgreich erstellt!`);
       return results;
       
     } catch (error) {
@@ -191,6 +251,7 @@ export const useAudioSlicer = () => {
     sliceAudio,
     downloadSlices,
     isSlicing,
-    progress
+    progress,
+    isFFmpegLoaded
   };
 };
