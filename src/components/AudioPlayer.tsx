@@ -45,20 +45,53 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
+    let animationFrame: number;
+    
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime);
+      if (isPlaying) {
+        animationFrame = requestAnimationFrame(updateTime);
+      }
+    };
+    
     const updateDuration = () => setDuration(audio.duration);
     const handleEnded = () => setIsPlaying(false);
+    const handlePlay = () => {
+      setIsPlaying(true);
+      updateTime(); // Start smooth updates
+    };
+    const handlePause = () => {
+      setIsPlaying(false);
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
 
-    audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('timeupdate', () => {
+      if (!isPlaying) {
+        setCurrentTime(audio.currentTime);
+      }
+    });
 
     return () => {
-      audio.removeEventListener('timeupdate', updateTime);
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('timeupdate', () => {
+        if (!isPlaying) {
+          setCurrentTime(audio.currentTime);
+        }
+      });
     };
-  }, [audioUrl]);
+  }, [audioUrl, isPlaying]);
 
   useEffect(() => {
     if (audioRef.current) {
