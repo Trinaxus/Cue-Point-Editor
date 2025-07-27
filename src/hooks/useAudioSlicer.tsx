@@ -34,7 +34,7 @@ export const useAudioSlicer = () => {
     }
     
     const sanitizedName = sanitizeFilename(trackName);
-    return `${trackNumber}-${sanitizedName}.mp3`;
+    return `${trackNumber}-${sanitizedName}.wav`;
   };
 
   const audioBufferToBlob = async (audioBuffer: AudioBuffer, startTime: number, endTime: number): Promise<Blob> => {
