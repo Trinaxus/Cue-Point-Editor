@@ -404,23 +404,41 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              <Button
-                onClick={() => document.getElementById('cue-import')?.click()}
-                variant="import"
-                className="flex-1 sm:flex-none"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                CUE laden
-              </Button>
-              <Button 
-                onClick={exportCueFile}
-                variant="export"
-                className="flex-1 sm:flex-none"
-                disabled={cuePoints.length === 0}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export CUE
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => document.getElementById('cue-import')?.click()}
+                      variant="import"
+                      className="flex-1 sm:flex-none"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      CUE laden
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>CUE-Datei laden und Cue Points importieren</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={exportCueFile}
+                      variant="export"
+                      className="flex-1 sm:flex-none"
+                      disabled={cuePoints.length === 0}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export CUE
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Aktuelle Cue Points als CUE-Datei exportieren</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
