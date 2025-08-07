@@ -123,6 +123,25 @@ export const Waveform: React.FC<WaveformProps> = ({
     }
   }, [audioUrl, generateWaveform]);
 
+  // Auto-pan to keep playhead visible when zoomed
+  useEffect(() => {
+    if (zoomLevel > 1 && duration > 0) {
+      const playheadIndex = (currentTime / duration) * waveformData.length;
+      const visibleStart = panOffset;
+      const visibleEnd = panOffset + waveformData.length / zoomLevel;
+      
+      // Check if playhead is outside visible area
+      if (playheadIndex < visibleStart || playheadIndex > visibleEnd) {
+        // Center the playhead in the visible area
+        const newPanOffset = Math.max(0, Math.min(
+          waveformData.length - waveformData.length / zoomLevel,
+          playheadIndex - (waveformData.length / zoomLevel) / 2
+        ));
+        setPanOffset(newPanOffset);
+      }
+    }
+  }, [currentTime, duration, zoomLevel, waveformData.length, panOffset]);
+
   const drawWaveform = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || waveformData.length === 0) return;
