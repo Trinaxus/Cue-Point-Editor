@@ -8,7 +8,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload
 import { Waveform } from './Waveform';
 import { CuePoint } from './CuePoint';
 import { TracklistManager } from './TracklistManager';
-import { CuePreview } from './CuePreview';
+import { PlaylistExport } from './PlaylistExport';
 import { useAudioSlicer } from '@/hooks/useAudioSlicer';
 import { toast } from 'sonner';
 import { CuePointData } from '@/types/CuePoint';
@@ -653,7 +653,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               performer={performer}
             />
             
-            <CuePreview 
+            <PlaylistExport 
               cuePoints={cuePoints}
               filename={file.name}
               performer={performer}
