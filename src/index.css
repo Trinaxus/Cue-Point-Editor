@@ -1,0 +1,466 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@font-face {
+  font-family: "Casio fx-9860GII Regular";
+  src: url("https://db.onlinewebfonts.com/t/a78ebd77ebc553fcdb4ac60026baa019.eot");
+  src: url("https://db.onlinewebfonts.com/t/a78ebd77ebc553fcdb4ac60026baa019.woff2") format("woff2"),
+       url("https://db.onlinewebfonts.com/t/a78ebd77ebc553fcdb4ac60026baa019.woff") format("woff"),
+       url("https://db.onlinewebfonts.com/t/a78ebd77ebc553fcdb4ac60026baa019.ttf") format("truetype"),
+       url("https://db.onlinewebfonts.com/t/a78ebd77ebc553fcdb4ac60026baa019.svg#Casio fx-9860GII Regular") format("svg");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Light mode colors */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 278 100% 70%;
+    --accent-foreground: 0 0% 9%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 142 71% 45%;
+
+    /* Cue Editor specific colors */
+    --neon-green: 142 71% 45%;
+    --neon-purple: 278 100% 70%;
+    --neon-blue: 199 89% 48%;
+    --neon-orange: 24 95% 53%;
+    --waveform-bg: 0 0% 98%;
+    --waveform-line: 142 71% 45%;
+    --cue-point: 0 84% 60%;
+    --playhead: 199 89% 48%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 142 71% 45%;
+  }
+  /* Add a real border layer that can be thickened on bass */
+  .mouse-glow.glow-reactive::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    border: var(--reactive-border, 1px) solid hsl(var(--border));
+    /* Keep it above the glow but below content */
+    z-index: 2;
+  }
+  /* Reactive variant: intensity driven by --reactive-intensity (0..1), hue rotation via --glow-hue (deg), spread via --glow-spread (0..100%) */
+  .mouse-glow.glow-reactive::before {
+    content: "";
+    position: absolute;
+    inset: -2px; /* allow glow to bloom slightly outside */
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1; /* below the border (::after) and content */
+    --i: clamp(var(--reactive-intensity, 0), 0, 1);
+    --h: var(--glow-hue, 140deg);
+    --h2: calc(var(--glow-hue, 140deg) + 120deg);
+    --h3: calc(var(--glow-hue, 140deg) + 240deg);
+    --sat: clamp(var(--glow-sat, 90%), 0%, 100%);
+    --stop: clamp(var(--glow-spread, 60%), 30%, 85%);
+    background:
+      radial-gradient(120% 120% at 0% 0%, hsl(var(--h) var(--sat) 60% / calc(var(--i) * 0.8)), transparent var(--stop)),
+      radial-gradient(120% 120% at 100% 0%, hsl(var(--h2) var(--sat) 60% / calc(var(--i) * 0.8)), transparent var(--stop)),
+      radial-gradient(120% 120% at 0% 100%, hsl(var(--h3) var(--sat) 60% / calc(var(--i) * 0.8)), transparent var(--stop)),
+      radial-gradient(120% 120% at 100% 100%, hsl(var(--h) var(--sat) 60% / calc(var(--i) * 0.8)), transparent var(--stop));
+    filter: saturate(calc(1.2 + var(--i) * 0.8)) brightness(calc(1 + var(--i) * 0.4)) blur(1px);
+  }
+
+  /* Base container ensures pseudo-elements layer correctly */
+  .mouse-glow {
+    position: relative;
+    isolation: isolate; /* z-index layering stays within container */
+    overflow: visible; /* allow glow bloom outside */
+  }
+  .mouse-glow > * { position: relative; z-index: 3; }
+
+  /* Reusable dot-grid container */
+  .dot-grid {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate; /* keep ::before at negative z-index within this context */
+  }
+  .dot-grid::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    bottom: 2px;
+    left: 2px;
+    pointer-events: none;
+    z-index: -1;
+    /* Hardcode green to avoid currentColor-in-data-URI inconsistencies across modes */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="6" viewBox="0 0 6 6"><rect x="0" y="0" width="3" height="3" fill="%2322c55e" fill-opacity="0.18"/></svg>');
+    background-size: 6px 6px;
+    background-position: 0 0;
+  }
+
+  /* Ensure immediate children can layer above the grid easily when needed */
+  .dot-grid > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Timer variant when shown on a grid background container */
+  .casio-timer-lite.on-grid {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    position: relative;
+    z-index: 2; /* above container grid */
+    /* Improve legibility on light backgrounds with a subtle dark shadow */
+    text-shadow:
+      0 0 6px hsl(var(--primary) / 0.50),
+      0 0 2px hsl(var(--primary) / 0.60),
+      1px 1px 0 rgba(0,0,0,0.35);
+  }
+  .dark .casio-timer-lite.on-grid {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    /* In dark mode, keep a clean neon glow without dark outline */
+    text-shadow:
+      0 0 6px hsl(120 100% 70% / 0.9),
+      0 0 2px hsl(120 100% 60% / 0.7);
+  }
+  .casio-timer-lite.on-grid::before { display: none !important; }
+
+  /* Defensive: any timer inside a dot-grid should be borderless/transparent and above dots */
+  .dot-grid .casio-timer-lite {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    position: relative;
+    z-index: 2;
+  }
+  .dot-grid .casio-timer-lite::before { display: none !important; }
+
+  .dark {
+    /* Dark mode colors */
+    --background: 220 13% 9%;
+    --foreground: 210 20% 85%;
+
+    --card: 220 13% 11%;
+    --card-foreground: 210 20% 85%;
+
+    --popover: 220 13% 11%;
+    --popover-foreground: 210 20% 85%;
+
+    --primary: 142 71% 45%;
+    --primary-foreground: 220 13% 9%;
+
+    --secondary: 220 13% 15%;
+    --secondary-foreground: 210 20% 85%;
+
+    --muted: 220 13% 15%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 278 100% 70%;
+    --accent-foreground: 220 13% 9%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 13% 18%;
+    --input: 220 13% 15%;
+    --ring: 142 71% 45%;
+
+    /* Cue Editor specific colors for dark mode */
+    --neon-green: 142 71% 45%;
+    --neon-purple: 278 100% 70%;
+    --neon-blue: 199 89% 48%;
+    --neon-orange: 24 95% 53%;
+    --waveform-bg: 220 13% 15%;
+    --waveform-line: 142 71% 45%;
+    --cue-point: 0 84% 60%;
+    --playhead: 199 89% 48%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
+  
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.3);
+  }
+  
+  .backdrop-blur-glass {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+@layer utilities {
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  /* Reuseable text glow similar to timer digits; uses currentColor for hue */
+  .timer-glow-text {
+    text-shadow: 0 0 6px currentColor, 0 0 2px currentColor;
+  }
+  .dark .timer-glow-text {
+    text-shadow: 0 0 6px currentColor, 0 0 2px currentColor;
+  }
+
+  /* Retro Player Animations */
+  .animate-scroll-text {
+    animation: scroll-text 15s linear infinite;
+  }
+
+  .animate-scroll-text-infinite {
+    animation: scroll-text-infinite 40s linear infinite;
+  }
+  
+  .animate-scroll-text-seamless {
+    animation: scroll-text-seamless 20s linear infinite;
+  }
+  
+  .animate-scroll-text-smooth {
+    animation: scroll-text-smooth 35s linear infinite;
+  }
+
+  /* Seamless marquee: duplicate content inside one track and translate -50% */
+  .marquee {
+    overflow: hidden;
+    position: relative;
+  }
+  .marquee-track {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    will-change: transform;
+    animation: marquee 30s linear infinite;
+  }
+
+  .retro-display {
+    font-family: "Casio fx-9860GII Regular";
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px currentColor;
+  }
+  
+  .retro-display-no-shadow {
+    font-family: "Casio fx-9860GII Regular";
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+
+
+  
+  .casio-timer-lite {
+    font-family: Casio fx-9860GII Regular;
+    font-weight: 300;
+    font-size: 1.6rem;
+    /* Light mode defaults */
+    background-color: hsl(var(--muted) / 0.6);
+    color: hsl(var(--primary));
+    border: 0px solid hsl(var(--border));
+    padding: 0px 0px;
+    border-radius: 8px;
+    text-shadow: 0 0 6px hsl(var(--primary) / 0.6), 0 0 0px hsl(var(--primary) / 0.5);
+    letter-spacing: 3px;
+    font-variant-numeric: tabular-nums;
+    position: relative; /* enable pseudo-element overlay */
+    overflow: hidden;   /* clip grid to rounded corners */
+    z-index: 0;         /* establish stacking context */
+    isolation: isolate; /* ensure content paints above ::before */
+  }
+
+  /* Preserve dark calculator look only in dark mode */
+  .dark .casio-timer-lite {
+    background: #101810;
+    color: #86efac;
+    border: 2px solid hsl(210, 15.8%, 14.9%);
+    text-shadow: 0 0 6px hsl(120, 100%, 70%), 0 0 0px hsl(120, 100%, 60%);
+  }
+  /* Subtle dot-grid overlay behind the time display (matches canvas grid:
+     spacing 6x6, dot size ~3, margin 2, primary color at ~0.18 alpha) */
+  .casio-timer-lite::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    bottom: 2px;
+    left: 2px;
+    pointer-events: none;
+    z-index: -1; /* ensure it is behind the text */
+    /* square dots via tiled SVG; color inherited from this pseudo (not affecting text) */
+    color: hsl(var(--primary) / 0.18);
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="6" viewBox="0 0 6 6"><rect x="0" y="0" width="3" height="3" fill="currentColor"/></svg>');
+    background-size: 6px 6px; /* spacing */
+    background-position: 0 0;
+  }
+  
+  .casio-timer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      hsl(0, 0%, 100% / 0.03) 1px,
+      transparent 2px,
+      transparent 4px
+    );
+    border-radius: 8px;
+    pointer-events: none;
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+  }
+  to {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.8), 0 0 30px hsl(var(--primary) / 0.4);
+  }
+}
+
+@keyframes scroll-text {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes scroll-text-infinite {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes scroll-text-seamless {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes scroll-text-smooth {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Seamless marquee: move track left by half its width (content duplicated) */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Mouse-follow neon border glow */
+@layer components {
+  .mouse-glow {
+    position: relative;
+    border-radius: 0.75rem; /* ~rounded-xl */
+    isolation: isolate;
+  }
+  .mouse-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    /* Two-layer radial glow that follows `--mx` and `--my` */
+    background:
+      radial-gradient(600px circle at var(--mx, -2000px) var(--my, -2000px), hsl(var(--accent) / 0.35), transparent 40%),
+      radial-gradient(900px circle at var(--mx, -2000px) var(--my, -2000px), hsl(var(--primary) / 0.25), transparent 55%);
+    /* Stroke only: mask the interior so the glow reads as border */
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    padding: 1px; /* border thickness of the glow */
+    z-index: 1;
+    filter: saturate(1.2) blur(0.2px);
+  }
+  /* Subtle base border to keep structure when not hovering */
+  .mouse-glow {
+    box-shadow: 0 0 0 1px hsl(var(--border));
+  }
+}
