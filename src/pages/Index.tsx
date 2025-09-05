@@ -48,9 +48,9 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={() => setIsLiteMode(!isLiteMode)}
-                className="border-border hover:bg-secondary"
+                className="h-10 w-10 rounded-full border border-border/50 bg-background/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300"
                 title={isLiteMode ? "Zur vollständigen Ansicht wechseln" : "Zur vereinfachten Player-Ansicht wechseln"}
               >
                 <Music className={`w-4 h-4 ${isLiteMode ? 'text-primary' : 'text-muted-foreground'}`} />
