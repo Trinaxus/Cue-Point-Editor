@@ -328,29 +328,19 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     }
   }, [volume]);
 
-  // When paused, mute the reactive glow so the border looks normal (no colored glow)
+  // Control border effects based on borderEffectsEnabled and playing state
   useEffect(() => {
     const el = liteGlowRef.current;
     if (!el) return;
-    if (!isPlaying) {
+    
+    // If border effects are disabled OR not playing, mute the glow
+    if (!borderEffectsEnabled || !isPlaying) {
       el.style.setProperty('--reactive-intensity', '0');
       el.style.setProperty('--glow-sat', '0%');
       el.style.setProperty('--glow-spread', '40%');
       el.style.setProperty('--reactive-border', '1px');
     }
-  }, [isPlaying]);
-
-  // Control border effects based on borderEffectsEnabled state
-  useEffect(() => {
-    const el = liteGlowRef.current;
-    if (!el) return;
-    if (!borderEffectsEnabled) {
-      el.style.setProperty('--reactive-intensity', '0');
-      el.style.setProperty('--glow-sat', '0%');
-      el.style.setProperty('--glow-spread', '40%');
-      el.style.setProperty('--reactive-border', '1px');
-    }
-  }, [borderEffectsEnabled]);
+  }, [borderEffectsEnabled, isPlaying]);
 
   // Apply pitch to playbackRate: 0% => 1.0, +16% => 1.16, -16% => 0.84
   useEffect(() => {
@@ -1639,7 +1629,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                         spike = glowBeatHoldRef.current;
                         // base intensity (scaled) + beat spike
                         const intensity = Math.max(0, Math.min(1, ema * 1.4 + spike * 0.6));
-                        if (liteGlowRef.current && borderEffectsEnabled && isPlaying) {
+                        if (liteGlowRef.current && borderEffectsEnabled) {
                           liteGlowRef.current.style.setProperty('--reactive-intensity', intensity.toFixed(3));
                           // Border thickness: 2px on noticeable bass/beat, else 1px
                           const thick = (level > threshold) || (spike > 0.2) || (intensity > 0.6);
@@ -1655,7 +1645,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                         // Spread grows with bass-driven intensity and a bit with treble brightness
                         const intensity = parseFloat(liteGlowRef.current?.style.getPropertyValue('--reactive-intensity') || '0');
                         const spread = Math.max(40, Math.min(85, 55 + intensity * 20 + treble * 10));
-                        if (liteGlowRef.current && borderEffectsEnabled && isPlaying) {
+                        if (liteGlowRef.current && borderEffectsEnabled) {
                           liteGlowRef.current.style.setProperty('--glow-hue', `${hue}deg`);
                           liteGlowRef.current.style.setProperty('--glow-spread', `${spread}%`);
                           // Optional: boost saturation slightly with mid/treble
