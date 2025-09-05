@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle, Scissors, List, X, ChevronDown, ChevronUp, Shuffle, Repeat, Repeat1, Music, Plus, Minus, Sparkles, Check } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle, Scissors, List, X, ChevronDown, ChevronUp, Shuffle, Repeat, Repeat1, Music, Plus, Minus, Sparkles, Check, Square } from 'lucide-react';
 import { Waveform } from './Waveform';
 import { CuePoint } from './CuePoint';
 import { TracklistManager } from './TracklistManager';
@@ -51,6 +51,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     channels?: string;
   }>({});
   const [effectsEnabled, setEffectsEnabled] = useState(true);
+  const [borderEffectsEnabled, setBorderEffectsEnabled] = useState(true);
   const [effectsMode, setEffectsMode] = useState<'rings' | 'ellipses' | 'twinkles' | 'pulsegrid' | 'orbitals' | 'swaylines' | 'nebula' | 'waves' | 'kraken'>('rings');
   const playlistRef = useRef<HTMLDivElement>(null);
   // Overlay twinkle canvas across entire media container
@@ -1784,6 +1785,18 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               ) : (
                 <Repeat className="w-4 h-4" />
               )}
+            </Button>
+
+            {/* Toggle Border Effects */}
+            <Button
+              variant={borderEffectsEnabled ? 'default' : 'ghost'}
+              size="sm"
+              className="w-8 h-8 p-0"
+              onClick={() => setBorderEffectsEnabled(v => !v)}
+              title={borderEffectsEnabled ? 'Border‑Effekt: An' : 'Border‑Effekt: Aus'}
+              aria-label="Border‑Effekt umschalten"
+            >
+              <Square className={`w-4 h-4 ${borderEffectsEnabled ? '' : 'opacity-50'}`} />
             </Button>
 
             {/* Toggle Visual Effects + Mode Dropdown */}
