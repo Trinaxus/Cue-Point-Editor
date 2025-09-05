@@ -328,19 +328,19 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
     }
   }, [volume]);
 
-  // Control border effects based on borderEffectsEnabled and playing state
+  // Control border effects based on borderEffectsEnabled state only
   useEffect(() => {
     const el = liteGlowRef.current;
     if (!el) return;
     
-    // If border effects are disabled OR not playing, mute the glow
-    if (!borderEffectsEnabled || !isPlaying) {
+    // Only disable if border effects are turned off
+    if (!borderEffectsEnabled) {
       el.style.setProperty('--reactive-intensity', '0');
       el.style.setProperty('--glow-sat', '0%');
       el.style.setProperty('--glow-spread', '40%');
       el.style.setProperty('--reactive-border', '1px');
     }
-  }, [borderEffectsEnabled, isPlaying]);
+  }, [borderEffectsEnabled]);
 
   // Apply pitch to playbackRate: 0% => 1.0, +16% => 1.16, -16% => 0.84
   useEffect(() => {
