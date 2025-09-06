@@ -26,6 +26,7 @@ export const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
   disableTwinkles = false,
   onToneLevels,
 }) => {
+  const bars = 32; // Number of frequency bars like classic Winamp
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -36,8 +37,10 @@ export const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
   const twinklesRef = useRef<Array<{ x: number; y: number; life: number }>>([]);
   const lastBassRef = useRef(0);
   const lastFrameTimeRef = useRef<number>(performance.now());
-
-  const bars = 32; // Number of frequency bars like classic Winamp
+  // Single peak cap above the top white row (per bar)
+  const peakRowsRef = useRef<number[]>(Array(bars).fill(0));
+  const peakHoldTimersRef = useRef<number[]>(Array(bars).fill(0));
+ 
   
   useEffect(() => {
     if (!audioRef.current || !canvasRef.current) return;
@@ -226,7 +229,10 @@ export const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
       ctx.restore();
     }
 
-    const maxBarHeight = canvas.height - 4;
+    // Reserve headroom for peak cap jumps (so caps can rise above full bars)
+    const headroomRows = 6; // allow ~3..5 dot-row jumps comfortably
+    const headroomPx = headroomRows * 6; // gridSpacingY = 6px per row
+    const maxBarHeight = Math.max(0, canvas.height - 4 - headroomPx);
 
     // Dot-matrix parameters (match background grid look)
     const gridSpacingX = 6;   // distance between dot columns
@@ -249,16 +255,28 @@ export const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
 
     // Draw bars as dot matrix with guaranteed gaps
     for (let i = 0; i < bars; i++) {
-      // Map to frequency data (emphasize lower freqs)
-      const dataIndex = Math.floor((i / bars) * (dataArrayRef.current.length * 0.5));
-      const barHeight = (dataArrayRef.current[dataIndex] / 255) * maxBarHeight;
+      // Map to frequency data with extended range into highs (up to ~90% of bins)
+      const tBand = i / Math.max(1, bars - 1); // 0..1 across bars
+      const idx = Math.floor(tBand * (dataArrayRef.current.length * 0.9));
+      const dataIndex = Math.max(0, Math.min(idx, dataArrayRef.current.length - 1));
+
+      // Boost highs: progressively increase weighting towards treble
+      const weight = 0.9 + 1.8 * tBand; // lows ~0.9x, highs ~2.7x
+      const raw = dataArrayRef.current[dataIndex];
+      let norm = Math.min(1, (raw / 255) * weight);
+      // Gentle gamma to lift small values so quiet highs become visible
+      norm = Math.pow(norm, 0.85);
+      const barHeight = norm * maxBarHeight;
 
       // Determine the starting column for this bar
       const startCol = i * (colsPerBar + gapCols);
       const endCol = startCol + colsPerBar; // exclusive
 
       // Iterate rows from bottom up within barHeight, aligned to grid
-      const maxRows = Math.floor(barHeight / gridSpacingY);
+      // Calculate rows and ensure a tiny minimum for audible highs
+      let maxRows = Math.floor(barHeight / gridSpacingY);
+      const minHiRows = (raw > 8 && tBand > 0.55) ? 1 : 0; // if some energy in upper bands, ensure 1 row
+      maxRows = Math.max(maxRows, minHiRows);
       for (let r = 0; r < maxRows; r++) {
         const y = canvas.height - margin - gridSpacingY - r * gridSpacingY;
         // Topmost lit row white, others green (always enable white top row)
@@ -268,6 +286,65 @@ export const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
           const x = margin + c * gridSpacingX;
           ctx.fillRect(x, y, dotSize, dotSize);
         }
+      }
+
+      // --- Single Peak Hold cap ---
+      // Cap rises on peaks and decays with inertia; baseline gap fixed at 1 dot above the white top.
+      const currentTopRows = maxRows; // number of lit rows
+      const baseTarget = Math.max(0, currentTopRows + 1); // always 1-dot gap when not pushed
+
+      // Ensure arrays sized (in case bars changes)
+      const ensureSize = (arrRef: React.MutableRefObject<number[]>, def = 0) => {
+        if (arrRef.current.length !== bars) arrRef.current = Array(bars).fill(def);
+      };
+      ensureSize(peakRowsRef); ensureSize(peakHoldTimersRef);
+
+      // Peak parameters
+      // Dynamic jump 3..5 rows based on bar energy so strong hits push higher
+      const energy = dataArrayRef.current[dataIndex] / 255; // 0..1 for this bar
+      const jump = 3 + Math.round(energy * 2);  // 3,4,5
+      const hold = 0.08;         // shorter hold for quicker return
+      const fall = 12;           // slightly slower decay for smoother fall
+
+      // Update single cap: jump only when cap has returned to baseline (touches white top + 1)
+      const capPos = peakRowsRef.current[i];
+      const atBaseline = capPos <= baseTarget + 0.001; // small epsilon
+      if (atBaseline && baseTarget + jump > capPos) {
+        // Only trigger a new jump when resting at baseline
+        peakRowsRef.current[i] = baseTarget + jump;
+        peakHoldTimersRef.current[i] = hold;
+      } else {
+        if (peakHoldTimersRef.current[i] > 0) {
+          peakHoldTimersRef.current[i] = Math.max(0, peakHoldTimersRef.current[i] - dt);
+        } else {
+          // Decay toward baseTarget but not below it (keeps gap at exactly 1 dot when idle)
+          const next = capPos - fall * dt;
+          peakRowsRef.current[i] = Math.max(baseTarget, next);
+        }
+      }
+
+      // Draw the single cap just above top (pink) with thickness 2 rows
+      {
+        const capRowTop = Math.floor(peakRowsRef.current[i]);
+        const capRowBottom = capRowTop - 1; // make it 2 rows thick
+        const maxPossibleRows = Math.floor((canvas.height - margin - gridSpacingY) / gridSpacingY);
+        const drawCapRow = (row: number, alpha: number) => {
+          if (row > currentTopRows && row >= 1) {
+            const rowIndex = Math.min(row, maxPossibleRows);
+            const yCap = canvas.height - margin - gridSpacingY - rowIndex * gridSpacingY;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#ccff00';
+            for (let c = startCol; c < endCol; c++) {
+              const x = margin + c * gridSpacingX;
+              ctx.fillRect(x, yCap, dotSize, dotSize);
+            }
+            ctx.restore();
+          }
+        };
+        // top row slightly brighter than the lower row
+        drawCapRow(capRowTop, 0.75);
+        drawCapRow(capRowBottom, 0.65);
       }
     }
 

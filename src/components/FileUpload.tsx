@@ -52,7 +52,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, selectedFi
           const base64String = btoa(
             arrayBuffer.reduce((data, byte) => data + String.fromCharCode(byte), '')
           );
-          const dataUrl = `data:${picture.mime};base64,${base64String}`;
+          // Normalize MIME: allow image/jpeg, image/jpg, image/png (fallback to jpeg if missing)
+          const rawMime = picture.mime || 'image/jpeg';
+          const mime = rawMime.toLowerCase() === 'image/jpg' ? 'image/jpeg' : rawMime;
+          const dataUrl = `data:${mime};base64,${base64String}`;
           setCoverImage(dataUrl);
         }
       } catch (error) {

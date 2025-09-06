@@ -1,11 +1,45 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as ID3 from 'id3js';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+  Info,
+  Circle,
+  Upload,
+  Download,
+  Scissors,
+  Music,
+  Volume2,
+  Minus,
+  Plus,
+  Shuffle,
+  SkipBack,
+  Pause,
+  Play,
+  SkipForward,
+  Repeat1,
+  Repeat,
+  Square,
+  List,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Check,
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Download, FileText, Upload, ChevronLeft, ChevronRight, Circle, Scissors, List, X, ChevronDown, ChevronUp, Shuffle, Repeat, Repeat1, Music, Plus, Minus, Sparkles, Check, Square } from 'lucide-react';
 import { Waveform } from './Waveform';
 import { CuePoint } from './CuePoint';
 import { TracklistManager } from './TracklistManager';
@@ -42,6 +76,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const [performer, setPerformer] = useState("Set");
   const [showPlaylist, setShowPlaylist] = useState(true);
   const [isShuffleEnabled, setIsShuffleEnabled] = useState(false);
+  const [showMeta, setShowMeta] = useState(false);
+  const [metaLoading, setMetaLoading] = useState(false);
+  const [metaData, setMetaData] = useState<Record<string, any> | null>(null);
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [audioMetadata, setAudioMetadata] = useState<{
@@ -128,7 +165,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
       // Extract cover art and metadata using ID3
       const extractMetadata = async () => {
         try {
-          const ID3 = await import('id3js');
           const tags = await ID3.fromFile(file);
           
           // Extract cover art
@@ -233,55 +269,55 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               audio.currentTime = start;
               if (audio.paused) audio.play();
             }
-          }
-        } else {
-          // No cues: repeat entire file
-          const end = duration || audio.duration;
-          if (!Number.isNaN(end as number) && audio.currentTime >= (end as number) - 0.2) {
-            audio.currentTime = 0;
-            if (audio.paused) audio.play();
-          }
-        }
-        return; // Repeat handled
-      }
-
-      // Shuffle/Nächstes Segment: automatisch weiter springen am Segmentende
-      if (cuePoints.length > 0) {
-        const sortedCues = [...cuePoints].sort((a, b) => a.time - b.time);
-        let index = -1;
-        for (let i = 0; i < sortedCues.length; i++) {
-          const nextCue = sortedCues[i + 1];
-          if (audio.currentTime >= sortedCues[i].time && (!nextCue || audio.currentTime < nextCue.time)) {
-            index = i;
-            break;
-          }
-        }
-
-        if (index >= 0) {
-          const end = index < sortedCues.length - 1 ? sortedCues[index + 1].time : (duration || audio.duration);
-          if (!Number.isNaN(end as number) && audio.currentTime >= (end as number) - 0.2) {
-            const now = performance.now();
-            if (now - lastAdvanceRef.current < 400) return; // debounce rapid advances
-
-            // Repeat-All: am letzten Segment direkt zum ersten springen
-            if (repeatMode === 'all' && index === sortedCues.length - 1) {
-              lastAdvanceRef.current = now;
-              const firstStart = sortedCues[0]?.time ?? 0;
-              seekTo(firstStart);
+          } else {
+            // No cues: repeat entire file
+            const end = duration || audio.duration;
+            if (!Number.isNaN(end as number) && audio.currentTime >= (end as number) - 0.2) {
+              audio.currentTime = 0;
               if (audio.paused) audio.play();
-              return;
             }
+          }
+          return; // Repeat handled
+        }
 
-            lastAdvanceRef.current = now;
-            // Verwende die gleiche Logik wie beim Weiter-Button (inkl. Shuffle)
-            jumpToNextCue();
-            if (audio.paused) audio.play();
+        // Shuffle/Nächstes Segment: automatisch weiter springen am Segmentende
+        if (cuePoints.length > 0) {
+          const sortedCues = [...cuePoints].sort((a, b) => a.time - b.time);
+          let index = -1;
+          for (let i = 0; i < sortedCues.length; i++) {
+            const nextCue = sortedCues[i + 1];
+            if (audio.currentTime >= sortedCues[i].time && (!nextCue || audio.currentTime < nextCue.time)) {
+              index = i;
+              break;
+            }
+          }
+
+          if (index >= 0) {
+            const end = index < sortedCues.length - 1 ? sortedCues[index + 1].time : (duration || audio.duration);
+            if (!Number.isNaN(end as number) && audio.currentTime >= (end as number) - 0.2) {
+              const now = performance.now();
+              if (now - lastAdvanceRef.current < 400) return; // debounce rapid advances
+
+              // Repeat-All: am letzten Segment direkt zum ersten springen
+              if (repeatMode === 'all' && index === sortedCues.length - 1) {
+                lastAdvanceRef.current = now;
+                const firstStart = sortedCues[0]?.time ?? 0;
+                seekTo(firstStart);
+                if (audio.paused) audio.play();
+                return;
+              }
+
+              lastAdvanceRef.current = now;
+              // Verwende die gleiche Logik wie beim Weiter-Button (inkl. Shuffle)
+              jumpToNextCue();
+              if (audio.paused) audio.play();
+            }
           }
         }
-      }
 
-      if (!isPlaying) {
-        setCurrentTime(audio.currentTime);
+        if (!isPlaying) {
+          setCurrentTime(audio.currentTime);
+        }
       }
     };
 
@@ -350,6 +386,75 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
       audioRef.current.volume = volume[0] / 100;
     }
   }, [volume]);
+
+  // Load ID3 metadata when info dialog opens
+  useEffect(() => {
+    const loadMeta = async () => {
+      if (!showMeta || !file) return;
+      try {
+        setMetaLoading(true);
+        const tags = await ID3.fromFile(file);
+        const entries: Record<string, any> = {};
+        if (tags.title) entries['Title'] = tags.title;
+        if (tags.artist) entries['Artist'] = tags.artist;
+        if (tags.album) entries['Album'] = tags.album;
+        // Year (robust across frames): year, recordingTime (TDRC), date
+        const rawYear = (tags as any).year || (tags as any).recordingTime || (tags as any).date;
+        if (rawYear) {
+          const y = String(rawYear).match(/\d{4}/)?.[0];
+          if (y) entries['Year'] = y;
+        }
+        // Fallback: try to extract year from filename if not found
+        if (!entries['Year']) {
+          const nameYear = file.name.match(/(19|20)\d{2}/)?.[0];
+          if (nameYear) entries['Year'] = nameYear;
+        }
+        // Genre
+        if ((tags as any).genre) entries['Genre'] = (tags as any).genre;
+        // Track number
+        if ((tags as any).track) entries['Track'] = (tags as any).track;
+        // Album Artist (common frames: TPE2 / "band", some libs expose albumArtist)
+        const albumArtist = (tags as any).albumArtist || (tags as any).band || (tags as any).TPE2;
+        if (albumArtist) entries['Album Artist'] = albumArtist;
+        // Publisher/Composer/Comment (optional)
+        if ((tags as any).publisher) entries['Publisher'] = (tags as any).publisher;
+        if ((tags as any).composer) entries['Composer'] = (tags as any).composer;
+        if ((tags as any).comment) entries['Comment'] = (tags as any).comment;
+        // Rating (popularimeter frame POPM)
+        const popm = (tags as any).popularimeter || (tags as any).POPM || (tags as any).rating || (tags as any).RATING;
+        if (popm) {
+          const r = typeof popm === 'object' && 'rating' in popm ? (popm as any).rating : popm;
+          if (r !== undefined) {
+            const rating5 = Math.max(0, Math.min(5, (Number(r) / 255) * 5));
+            entries['Rating'] = Number(rating5.toFixed(1)); // store numeric 0..5 for rendering stars
+          }
+        }
+        // technical
+        if (duration && Number.isFinite(duration)) {
+          const hrs = Math.floor(duration / 3600);
+          const mins = Math.floor((duration % 3600) / 60);
+          const secs = Math.floor(duration % 60);
+          const hhmmss = `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+          entries['Duration'] = hhmmss;
+        }
+        if (file && file.size) {
+          entries['File Size'] = `${(file.size / (1024*1024)).toFixed(2)} MB`;
+          if (duration && Number.isFinite(duration) && duration > 0) {
+            const kbps = Math.round((file.size * 8) / duration / 1000);
+            entries['Bitrate'] = `${kbps} kbps`;
+          }
+        }
+        entries['MIME'] = file.type || 'audio/mpeg';
+        setMetaData(entries);
+      } catch (e) {
+        setMetaData({ Error: (e as Error)?.message || 'Failed to read ID3 tags' });
+      } finally {
+        setMetaLoading(false);
+      }
+    };
+    loadMeta();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showMeta]);
 
   // Control border effects based on borderEffectsEnabled state only
   useEffect(() => {
@@ -1781,7 +1886,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                 </div>
 
                 {/* Right column: timer, marquee, spectrum on same grid */}
-                <div className="flex flex-col justify-between gap-2 min-h-64 relative">
+                <div className="grid grid-rows-[auto_1fr_auto] gap-2 min-h-64 relative">
                   {/* Casio-Style Timer on grid (left aligned) */}
                   <div className="casio-timer-lite on-grid text-left bg-transparent border-0 z-10 pr-16 opacity-50">
                     {formatTimeCasio(currentTime)}
@@ -1806,7 +1911,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                   </div>
 
                   {/* Scrolling Track Title */}
-                  <div className="overflow-hidden relative h-12 rounded z-10 marquee">
+                  <div className="overflow-hidden relative h-12 rounded z-20 marquee self-center justify-self-stretch translate-y-[30px]">
                     <div className="absolute inset-0 flex items-center z-10">
                       <div className="marquee-track retro-display-no-shadow timer-glow-text text-sm whitespace-nowrap font-bold">
                         {(() => {
@@ -1818,13 +1923,30 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                                   <span className="mr-12">
                                     <span className="text-pink-500">{String(currentTrack.trackNumber || 0).padStart(2, '0')}</span>
                                     <span className="text-[hsl(var(--accent))]">&nbsp;-&nbsp;</span>
-                                    <span className="text-[hsl(var(--foreground)/0.5)] dark:text-white">{currentTrack.artist}</span>
+                                    <span className="text-white">{currentTrack.artist}</span>
                                     <span className="text-[hsl(var(--accent))]">&nbsp;-&nbsp;</span>
                                     <span className="text-[#86efac]">{currentTrack.name}</span>
                                     <span className="text-[#86efac]">&nbsp;•••&nbsp;</span>
                                   </span>
                                 );
                               } else {
+                                // No separate artist provided; try to split name by ' - '
+                                const text = currentTrack.name || '';
+                                const dash = text.indexOf(' - ');
+                                if (dash !== -1) {
+                                  const artistPart = text.slice(0, dash).trim();
+                                  const titlePart = text.slice(dash + 3).trim();
+                                  return (
+                                    <span className="mr-12">
+                                      <span className="text-pink-500">{String(currentTrack.trackNumber || 0).padStart(2, '0')}</span>
+                                      <span className="text-[hsl(var(--accent))]">&nbsp;-&nbsp;</span>
+                                      <span className="text-white">{artistPart}</span>
+                                      <span className="text-[hsl(var(--accent))]">&nbsp;-&nbsp;</span>
+                                      <span className="text-[#86efac]">{titlePart}</span>
+                                      <span className="text-[#86efac]">&nbsp;•••&nbsp;</span>
+                                    </span>
+                                  );
+                                }
                                 return (
                                   <span className="mr-12">
                                     <span className="text-pink-500">{String(currentTrack.trackNumber || 0).padStart(2, '0')}</span>
@@ -1856,7 +1978,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                   </div>
 
                   {/* Spectrum Analyzer inside shared grid container */}
-                  <div className="h-16">
+                  <div className="h-28 md:h-32">
                     <SpectrumAnalyzer
                       audioRef={audioRef}
                       isPlaying={isPlaying}
@@ -2046,18 +2168,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               )}
             </Button>
 
-            {/* Toggle Border Effects */}
-            <Button
-              variant={borderEffectsEnabled ? 'default' : 'ghost'}
-              size="sm"
-              className="w-8 h-8 p-0"
-              onClick={() => setBorderEffectsEnabled(v => !v)}
-              title={borderEffectsEnabled ? 'Border‑Effekt: An' : 'Border‑Effekt: Aus'}
-              aria-label="Border‑Effekt umschalten"
-            >
-              <Square className={`w-4 h-4 ${borderEffectsEnabled ? '' : 'opacity-50'}`} />
-            </Button>
-
             {/* Toggle Visual Effects + Mode Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -2074,6 +2184,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               <DropdownMenuContent align="end" side="top" className="z-50 w-44">
                 <DropdownMenuItem onClick={() => setEffectsEnabled(v => !v)}>
                   {effectsEnabled ? 'Effekt ausschalten' : 'Effekt einschalten'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setBorderEffectsEnabled(v => !v)}>
+                  {borderEffectsEnabled ? 'Border‑Effekt ausschalten' : 'Border‑Effekt einschalten'}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Modus</DropdownMenuLabel>
@@ -2112,6 +2225,84 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Info Button (only in Lite mode) */}
+            {isLiteMode && (
+              <Dialog open={showMeta} onOpenChange={setShowMeta}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    title="MP3-Metadaten anzeigen"
+                    className="ml-1 h-8 w-8 rounded-full border-border/50 hover:bg-card/70"
+                  >
+                    <Info className="w-4 h-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl w-full border border-border/50 bg-background/80 backdrop-blur-md dot-grid-bg">
+                  <DialogHeader>
+                    <DialogTitle className="retro-display-no-shadow">MP3-Metadaten</DialogTitle>
+                  </DialogHeader>
+                  <div className="max-h-[60vh] overflow-auto p-2">
+                    {metaLoading ? (
+                      <div className="text-sm text-muted-foreground">Lade Metadaten…</div>
+                    ) : (
+                      <div className="rounded border border-border/40 bg-card/40">
+                        <table className="w-full text-sm">
+                          <thead className="sticky top-0 bg-background/80 backdrop-blur-md">
+                            <tr>
+                              <th className="text-left px-3 py-2 text-muted-foreground font-medium">Feld</th>
+                              <th className="text-left px-3 py-2 text-muted-foreground font-medium">Wert</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {metaData && Object.keys(metaData).length > 0 ? (() => {
+                              const order = [
+                                'Title','Artist','Album','Album Artist','Rating','Year',
+                                'Genre','Track','Duration','Bitrate','Rating',
+                                'File Size','MIME','Publisher','Composer','Comment'
+                              ];
+                              const present = new Set(Object.keys(metaData));
+                              const orderedKeys = [
+                                ...order.filter(k => present.has(k)),
+                                ...Array.from(present).filter(k => !order.includes(k))
+                              ];
+                              return orderedKeys.map(k => {
+                                const v = (metaData as any)[k];
+                                return (
+                                  <tr key={k} className="even:bg-background/30">
+                                    <td className="px-3 py-2 text-foreground/90 whitespace-nowrap">{k}</td>
+                                    <td className="px-3 py-2 text-foreground/80 break-all">
+                                      {k === 'Rating' && typeof v === 'number' ? (
+                                        <span className="inline-flex items-center gap-2">
+                                          <span className="text-yellow-300 tracking-[2px]">
+                                            {(() => {
+                                              const filled = Math.round(v);
+                                              return '★★★★★'.slice(0, filled).padEnd(5, '☆');
+                                            })()}
+                                          </span>
+                                          <span className="text-muted-foreground">({v.toFixed(1)}/5)</span>
+                                        </span>
+                                      ) : (
+                                        typeof v === 'object' ? JSON.stringify(v) : String(v)
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            })() : (
+                              <tr>
+                                <td className="px-3 py-3 text-muted-foreground" colSpan={2}>Keine Metadaten gefunden</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
           
           {/* Progress Bar (zeigt nur die Länge des aktuellen Titels/Segments) */}
@@ -2165,14 +2356,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                 <div
                   ref={playlistRef}
                   className="space-y-1 max-h-64 overflow-y-auto border border-muted-foreground/20 rounded bg-transparent p-2 dot-grid-bg dot-grid-scroll"
-                  style={{
-                    backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"6\" height=\"6\" viewBox=\"0 0 6 6\"><rect x=\"0\" y=\"0\" width=\"3\" height=\"3\" fill=\"%2322c55e\" fill-opacity=\"0.18\"/></svg>')",
-                    backgroundSize: '6px 6px',
-                    backgroundPosition: '0 0',
-                    backgroundRepeat: 'repeat',
-                    backgroundAttachment: 'local',
-                    borderRadius: '0.5rem',
-                  }}
                 >
                   {cuePoints.map((cue, index) => {
                     const isActive = (() => {
@@ -2192,7 +2375,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                         key={cue.id}
                         data-track-index={index}
                         onClick={() => jumpToCue(cue.time)}
-                        className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all duration-200 dot-grid-bg dot-grid-scroll ${
+                        className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all duration-200 ${
                           isActive 
                             ? 'bg-gradient-to-r from-primary/30 to-primary/20 text-primary border-l-4 border-primary shadow-md animate-pulse-slow' 
                             : 'hover:bg-accent/30 text-foreground hover:border-l-2 hover:border-accent'
