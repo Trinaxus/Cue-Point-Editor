@@ -52,7 +52,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   }>({});
   const [effectsEnabled, setEffectsEnabled] = useState(true);
   const [borderEffectsEnabled, setBorderEffectsEnabled] = useState(true);
-  const [effectsMode, setEffectsMode] = useState<'rings' | 'ellipses' | 'twinkles' | 'pulsegrid' | 'orbitals' | 'swaylines' | 'nebula' | 'waves' | 'kraken'>('rings');
+  const [effectsMode, setEffectsMode] = useState<'rings' | 'ellipses' | 'twinkles' | 'pulsegrid' | 'orbitals' | 'swaylines' | 'nebula' | 'waves' | 'kraken' | 'ribbons' | 'invaders'>('rings');
   const playlistRef = useRef<HTMLDivElement>(null);
   // Overlay twinkle canvas across entire media container
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -61,7 +61,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const overlayTwinklesRef = useRef<Array<{ x: number; y: number; life: number }>>([]);
   const overlayLastTimeRef = useRef<number>(performance.now());
   const bassLevelRef = useRef(0);
-  const lastModeRef = useRef<'rings' | 'ellipses' | 'twinkles' | 'pulsegrid' | 'orbitals' | 'swaylines' | 'nebula' | 'waves' | 'kraken'>("rings");
+  const midLevelRef = useRef(0);
+  const trebleLevelRef = useRef(0);
+  const lastModeRef = useRef<'rings' | 'ellipses' | 'twinkles' | 'pulsegrid' | 'orbitals' | 'swaylines' | 'nebula' | 'waves' | 'kraken' | 'ribbons' | 'invaders'>("rings");
   // Pulse Grid data
   const gridPointsRef = useRef<Array<{ x: number; y: number }>>([]);
   const gridPulsesRef = useRef<Array<{ idx: number; life: number }>>([]);
@@ -75,6 +77,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const nebulaRef = useRef<Array<{ x: number; y: number; r: number; life: number }>>([]);
   // Waves (horizontal stacked waves)
   const wavesRef = useRef<Array<{ y: number; amp: number; freq: number; phase: number; speed: number }>>([]);
+  // Ribbons (EQ-like rounded lines)
+  const ribbonsRef = useRef<Array<{ y: number; freq: number; phase: number; speed: number; band: 'bass' | 'mid' | 'treble'; width: number }>>([]);
+  // Invaders (retro pixel sprites)
+  const invadersRef = useRef<Array<{ x: number; y: number; dir: 1 | -1; type: number; phase: number; speed: number; scale: number; hue: number }>>([]);
+  // Invader explosion particles
+  const invaderBurstsRef = useRef<Array<{ x: number; y: number; vx: number; vy: number; life: number; hue: number; size: number }>>([]);
   // Kraken (radial rays)
   const krakenRef = useRef<Array<{ angle: number; width: number; life: number; len: number }>>([]);
   // Kraken offscreen buffer for luminance compositing
@@ -84,6 +92,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
   const lastBeatMsRef = useRef(0);
   const beatPulseRef = useRef(0);
   const supernovasRef = useRef<Array<{ x: number; y: number; life: number; maxRadius: number }>>([]);
+  // Smooth decay when pausing
+  const pauseDecayRef = useRef(0); // 0..1 amplitude multiplier
   
   // Audio Slicer Hook
   const { sliceAudio, downloadSlices, isSlicing, progress } = useAudioSlicer();
@@ -105,6 +115,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
           inline: 'nearest'
         });
       }
+
+      // (ribbons are lazily initialized inside draw() where we know the canvas rect)
     }
   }, [currentTime, isLiteMode, showPlaylist, cuePoints]);
 
@@ -201,22 +213,33 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
 
     const handleTimeUpdate = () => {
       // Repeat One: Schleife im aktuellen Track-Bereich (zwischen diesem Cue und dem nächsten Cue)
-      if (repeatMode === 'one' && cuePoints.length > 0) {
+      if (repeatMode === 'one') {
         const sortedCues = [...cuePoints].sort((a, b) => a.time - b.time);
-        let index = -1;
-        for (let i = 0; i < sortedCues.length; i++) {
-          const nextCue = sortedCues[i + 1];
-          if (audio.currentTime >= sortedCues[i].time && (!nextCue || audio.currentTime < nextCue.time)) {
-            index = i;
-            break;
+        if (sortedCues.length > 0) {
+          let index = -1;
+          for (let i = 0; i < sortedCues.length; i++) {
+            const nextCue = sortedCues[i + 1];
+            if (audio.currentTime >= sortedCues[i].time && (!nextCue || audio.currentTime < nextCue.time)) {
+              index = i;
+              break;
+            }
           }
-        }
-
-        if (index >= 0) {
-          const start = sortedCues[index].time;
-          const end = index < sortedCues.length - 1 ? sortedCues[index + 1].time : (duration || audio.duration || Number.MAX_SAFE_INTEGER);
-          if (!Number.isNaN(end) && audio.currentTime >= end - 0.05) {
-            audio.currentTime = start;
+          if (index >= 0) {
+            const start = sortedCues[index].time;
+            const end = index < sortedCues.length - 1 ? sortedCues[index + 1].time : (duration || audio.duration);
+            // use a safer threshold so we don't miss loop on long segments
+            const threshold = 0.2;
+            if (!Number.isNaN(end as number) && audio.currentTime >= (end as number) - threshold) {
+              audio.currentTime = start;
+              if (audio.paused) audio.play();
+            }
+          }
+        } else {
+          // No cues: repeat entire file
+          const end = duration || audio.duration;
+          if (!Number.isNaN(end as number) && audio.currentTime >= (end as number) - 0.2) {
+            audio.currentTime = 0;
+            if (audio.paused) audio.play();
           }
         }
         return; // Repeat handled
@@ -407,6 +430,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
       dt = Math.min(dt, 0.05);
       overlayLastTimeRef.current = now;
 
+      // Update pause decay towards target (1 when playing, 0 when paused)
+      const target = isPlaying ? 1 : 0;
+      const speedUp = 6.0;  // rise time when playing (~0.17s)
+      const slowDown = 2.0; // decay time when paused (~0.5s)
+      const k = (target > pauseDecayRef.current ? speedUp : slowDown) * dt;
+      pauseDecayRef.current += (target - pauseDecayRef.current) * Math.min(1, Math.max(0, k));
+
       const rect = container.getBoundingClientRect();
       // clear
       ctx.clearRect(0, 0, rect.width, rect.height);
@@ -430,6 +460,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
         nebulaRef.current = [];
         wavesRef.current = [];
         krakenRef.current = [];
+        ribbonsRef.current = [];
+        invadersRef.current = [];
+        invaderBurstsRef.current = [];
         lastModeRef.current = effectsMode;
       }
 
@@ -619,7 +652,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
       // render modes with additive blending
       if (overlayTwinklesRef.current.length) {
         ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
+        // Draw ribbons using luminosity for a clean white glow look
+        ctx.globalCompositeOperation = 'soft-light';
         for (let i = overlayTwinklesRef.current.length - 1; i >= 0; i--) {
           const p = overlayTwinklesRef.current[i];
           const beatBoost = 0.25 * beatPulseRef.current;
@@ -679,6 +713,139 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
         ctx.restore();
       }
 
+      // Invaders rendering (retro pixel sprites dancing to the beat)
+      if (effectsMode === 'invaders') {
+        // compute left pad to avoid cover
+        let leftPad = 0;
+        if (overlayContainerRef.current) {
+          const contRect = overlayContainerRef.current.getBoundingClientRect();
+          const coverEl = overlayContainerRef.current.querySelector('[data-overlay-cover]') as HTMLElement | null;
+          if (coverEl) {
+            const r = coverEl.getBoundingClientRect();
+            leftPad = Math.max(0, r.right - contRect.left + 8);
+          }
+        }
+
+        const cell = 6; // grid cell size (px)
+        const cols = Math.floor((rect.width - leftPad) / cell);
+        // 8x8 bitmap shapes (1=on)
+        const shapes: number[][][] = [
+          [
+            [0,1,0,0,0,0,1,0],
+            [0,0,1,0,0,1,0,0],
+            [0,1,1,1,1,1,1,0],
+            [1,1,0,1,1,0,1,1],
+            [1,1,1,1,1,1,1,1],
+            [0,1,0,1,1,0,1,0],
+            [1,0,0,0,0,0,0,1],
+            [0,1,0,0,0,0,1,0],
+          ],
+          [
+            [0,0,1,0,0,1,0,0],
+            [0,1,1,1,1,1,1,0],
+            [1,1,0,1,1,0,1,1],
+            [1,1,1,1,1,1,1,1],
+            [0,1,1,1,1,1,1,0],
+            [0,0,1,1,1,1,0,0],
+            [0,1,0,0,0,0,1,0],
+            [1,0,0,0,0,0,0,1],
+          ],
+          [
+            [0,0,1,1,1,1,0,0],
+            [0,1,1,1,1,1,1,0],
+            [1,1,0,1,1,0,1,1],
+            [1,1,1,1,1,1,1,1],
+            [0,1,1,1,1,1,1,0],
+            [0,0,1,0,0,1,0,0],
+            [0,1,0,0,0,0,1,0],
+            [1,0,0,0,0,0,0,1],
+          ],
+        ];
+
+        if (invadersRef.current.length === 0) {
+          const count = Math.max(4, Math.min(12, Math.floor(cols / 14)));
+          for (let i = 0; i < count; i++) {
+            const colX = leftPad + (2 + i * Math.floor(cols / Math.max(1, count))) * cell;
+            const rowY = (2 + (i % 6) * 4) * cell;
+            invadersRef.current.push({
+              x: colX,
+              y: rowY,
+              dir: Math.random() < 0.5 ? 1 : -1,
+              type: i % shapes.length,
+              phase: Math.random() * Math.PI * 2,
+              speed: 14 + Math.random() * 10,
+              scale: 1 + Math.random() * 0.5,
+              hue: 130 + Math.random() * 220,
+            });
+          }
+        }
+
+        const bass = bassLevelRef.current;
+        ctx.save();
+        ctx.globalCompositeOperation = 'soft-light';
+        // Beat-intensified global bob factor and flash
+        const beat = beatPulseRef.current;
+        for (const e of invadersRef.current) {
+          e.phase += dt * (0.8 + bass * 2);
+          const bob = Math.sin(e.phase) * (2 + 14 * (bass + 0.6 * beat)) * pauseDecayRef.current;
+          e.x += e.dir * dt * e.speed * (0.5 + 1.5 * (bass + beat)) * pauseDecayRef.current;
+          if (e.x < leftPad + cell * 2) { e.x = leftPad + cell * 2; e.dir = 1; }
+          if (e.x > rect.width - cell * 12) { e.x = rect.width - cell * 12; e.dir = -1; }
+
+          const mid = midLevelRef.current;
+          const tre = trebleLevelRef.current;
+          const sat = 70 + Math.min(30, (mid + tre) * 40);
+          const alpha = 0.06 + 0.22 * (bass + 0.7 * beat);
+          ctx.fillStyle = `hsla(${e.hue.toFixed(0)}, ${sat}%, ${60 + 10 * beat}%, ${Math.min(0.26, alpha)})`;
+          const s = e.scale * (1 + 0.15 * beat * pauseDecayRef.current); // beat scale
+          const shape = shapes[e.type];
+          for (let yy = 0; yy < 8; yy++) {
+            for (let xx = 0; xx < 8; xx++) {
+              if (!shape[yy][xx]) continue;
+              const px = Math.round(e.x + xx * cell * s);
+              const py = Math.round(e.y + (yy * cell + bob) * s);
+              ctx.fillRect(px, py, Math.ceil(cell * s), Math.ceil(cell * s));
+            }
+          }
+        }
+        // Spawn bursts on strong beats
+        if (beat > 0.65 && pauseDecayRef.current > 0.05 && invadersRef.current.length) {
+          // choose 1-2 random invaders to burst
+          const n = 1 + Math.round(Math.random());
+          for (let k = 0; k < n; k++) {
+            const e = invadersRef.current[Math.floor(Math.random() * invadersRef.current.length)];
+            if (!e) continue;
+            const particles = 18 + Math.floor(Math.random() * 10);
+            for (let i = 0; i < particles; i++) {
+              const ang = (i / particles) * Math.PI * 2 + Math.random() * 0.3;
+              const sp = 40 + Math.random() * 80;
+              invaderBurstsRef.current.push({
+                x: e.x + cell * 4 * e.scale,
+                y: e.y + cell * 4 * e.scale,
+                vx: Math.cos(ang) * sp,
+                vy: Math.sin(ang) * sp,
+                life: 1,
+                hue: e.hue,
+                size: 2 + Math.random() * 2,
+              });
+            }
+          }
+        }
+        // Render and update particles
+        for (let i = invaderBurstsRef.current.length - 1; i >= 0; i--) {
+          const p = invaderBurstsRef.current[i];
+          p.life -= dt * 1.6;
+          if (p.life <= 0) { invaderBurstsRef.current.splice(i, 1); continue; }
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vx *= (1 - 1.2 * dt);
+          p.vy *= (1 - 1.2 * dt);
+          const a = Math.max(0, 0.22 * p.life * pauseDecayRef.current);
+          ctx.fillStyle = `hsla(${p.hue.toFixed(0)}, 80%, 60%, ${a})`;
+          ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+        ctx.restore();
+      }
       // Waves rendering
       if (effectsMode === 'waves') {
         ctx.save();
@@ -693,6 +860,93 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
             const y = w.y + Math.sin(x * w.freq + w.phase) * amp * (0.6 + 0.4 * Math.sin(x * w.freq * 0.5 + w.phase * 0.7));
             if (x === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Ribbons rendering (EQ-like rounded lines)
+      if (effectsMode === 'ribbons') {
+        // determine left padding so we don't draw under the cover
+        let leftPad = 0;
+        if (overlayContainerRef.current) {
+          const contRect = overlayContainerRef.current.getBoundingClientRect();
+          const coverEl = overlayContainerRef.current.querySelector('[data-overlay-cover]') as HTMLElement | null;
+          if (coverEl) {
+            const r = coverEl.getBoundingClientRect();
+            leftPad = Math.max(0, r.right - contRect.left + 8); // include small gap
+          }
+        }
+        // lazy init: group lines around a center row; same base curve with slight offsets
+        if (ribbonsRef.current.length === 0) {
+          const lines = 7; // dense bundle
+          const centerY = rect.height * 0.5;
+          const spacing = 0; // all lines share same baseline
+          const baseFreq = 0.005; // even smoother
+          for (let i = 0; i < lines; i++) {
+            const band: 'bass' | 'mid' | 'treble' = i % 3 === 0 ? 'bass' : (i % 3 === 1 ? 'mid' : 'treble');
+            const offset = (i - (lines - 1) / 2) * spacing;
+            ribbonsRef.current.push({
+              y: centerY + offset,
+              freq: baseFreq * (1 + i * 0.008),
+              phase: Math.random() * Math.PI * 2 + i * 0.5,
+              speed: 0.85 + i * 0.035,
+              band,
+              width: 1.6 + (i % 2 === 0 ? 0.15 : 0),
+            });
+          }
+        }
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // thin baseline across the full width (very subtle), starting after cover
+        ctx.strokeStyle = 'rgba(134,239,172,0.06)';
+        ctx.lineWidth = 0.8;
+        const baseY = ribbonsRef.current.length ? ribbonsRef.current[Math.floor(ribbonsRef.current.length / 2)].y : rect.height * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(leftPad, baseY);
+        ctx.lineTo(rect.width, baseY);
+        ctx.stroke();
+
+        const bassLvl = bassLevelRef.current;
+        const midLvl = midLevelRef.current;
+        const trebLvl = trebleLevelRef.current;
+        // combined level to scale envelope
+        const combo = Math.min(1, (0.6 * bassLvl + 0.3 * midLvl + 0.1 * trebLvl)) * pauseDecayRef.current;
+
+        for (const r of ribbonsRef.current) {
+          const lvl = r.band === 'bass' ? bassLvl : r.band === 'mid' ? midLvl : trebLvl;
+          // envelope: flat near edges, strong peak center (outward excursions)
+          const envAt = (x: number) => {
+            const widthAvail = Math.max(1, rect.width - leftPad);
+            const t = Math.min(1, Math.max(0, (x - leftPad) / widthAvail)); // 0..1 over drawable area
+            return Math.pow(Math.sin(Math.PI * t), 2.8);
+          };
+          const ampBase = (12 + 70 * combo) * 1.2; // +20% stronger center height
+          const ampBand = (6 + 24 * lvl) * 1.2 * pauseDecayRef.current; // +20% per line contribution with decay
+          r.phase += (0.82 + r.speed * 0.05 + lvl * 0.85 + beatPulseRef.current * 0.5) * dt;
+
+          // subtle green stroke that blends with dotted green background
+          const alpha = 0.08 + 0.14 * (lvl + 0.3 * beatPulseRef.current);
+          ctx.strokeStyle = `rgba(134, 239, 172, ${Math.min(0.18, alpha)})`;
+          ctx.lineWidth = Math.max(0.9, r.width + 0.35 * (0.4 + lvl + 0.7 * beatPulseRef.current));
+          ctx.shadowColor = 'rgba(134, 239, 172, 0.18)';
+          ctx.shadowBlur = 2 + 6 * (lvl + 0.3 * beatPulseRef.current);
+
+          ctx.beginPath();
+          for (let x = leftPad; x <= rect.width; x += 5) {
+            const env = envAt(x);
+            // gentle curvature with slight wobble for depth
+            const wobble = Math.sin(x * r.freq * 0.28 + r.phase * 0.55) * 0.45;
+            const y = r.y + Math.sin(x * r.freq + r.phase + wobble) * (ampBase * env);
+            // small per-line band scaling
+            const yScaled = y + Math.sin(x * r.freq * 0.5 + r.phase) * (ampBand * env * 0.24);
+            if (x === 0) ctx.moveTo(x, yScaled);
+            else ctx.lineTo(x, yScaled);
           }
           ctx.stroke();
         }
@@ -975,16 +1229,16 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
         ctx.restore();
       }
 
-      if (isPlaying) {
+      if (isPlaying || pauseDecayRef.current > 0.01) {
         overlayAnimRef.current = requestAnimationFrame(draw);
       }
     };
 
     if (isPlaying) {
       overlayAnimRef.current = requestAnimationFrame(draw);
-    } else if (overlayAnimRef.current) {
-      cancelAnimationFrame(overlayAnimRef.current);
-      overlayAnimRef.current = undefined;
+    } else if (!overlayAnimRef.current) {
+      // Kick a decay frame so we animate down to baseline
+      overlayAnimRef.current = requestAnimationFrame(draw);
     }
 
     return () => {
@@ -1510,7 +1764,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
             <div ref={overlayContainerRef} className="relative dot-grid rounded border border-muted-foreground/20 p-2">
               <div className="grid grid-cols-[auto_1fr] gap-4 items-start relative z-10">
                 {/* Cover Art inside the shared grid */}
-                <div className="w-64 h-64 bg-gradient-to-br from-primary/20 to-accent/20 border border-muted-foreground/20 flex items-center justify-center rounded shadow-lg overflow-hidden">
+                <div data-overlay-cover className="w-64 h-64 bg-gradient-to-br from-primary/20 to-accent/20 border border-muted-foreground/20 flex items-center justify-center rounded shadow-lg overflow-hidden">
                   {coverImage ? (
                     <img
                       src={coverImage}
@@ -1529,7 +1783,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                 {/* Right column: timer, marquee, spectrum on same grid */}
                 <div className="flex flex-col justify-between gap-2 min-h-64 relative">
                   {/* Casio-Style Timer on grid (left aligned) */}
-                  <div className="casio-timer-lite on-grid text-left bg-transparent border-0 z-10 pr-16">
+                  <div className="casio-timer-lite on-grid text-left bg-transparent border-0 z-10 pr-16 opacity-50">
                     {formatTimeCasio(currentTime)}
                     {/* Small negative remaining time at top-right */}
                     {Number.isFinite(duration) && duration > 0 && (
@@ -1637,6 +1891,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                         }
                       }}
                       onToneLevels={({ mid, treble, centroid }) => {
+                        // feed ribbons effect
+                        midLevelRef.current = mid;
+                        trebleLevelRef.current = treble;
                         // Map centroid (0..1) to base hue (0..360)
                         const baseHue = (centroid * 360) % 360;
                         // Rotate by beat phase steps (e.g., 45deg per beat)
@@ -1841,6 +2098,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                 <DropdownMenuItem onClick={() => setEffectsMode('waves')}>
                   {effectsMode === 'waves' && <Check className="w-3.5 h-3.5 mr-2" />} Waves
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setEffectsMode('ribbons')}>
+                  {effectsMode === 'ribbons' && <Check className="w-3.5 h-3.5 mr-2" />} Ribbons (EQ‑Lines)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setEffectsMode('invaders')}>
+                  {effectsMode === 'invaders' && <Check className="w-3.5 h-3.5 mr-2" />} Invaders (Retro)
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setEffectsMode('kraken')}>
                   {effectsMode === 'kraken' && <Check className="w-3.5 h-3.5 mr-2" />} Kraken
                 </DropdownMenuItem>
@@ -1899,7 +2162,18 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
               
               {/* Playlist */}
               {showPlaylist && (
-                <div ref={playlistRef} className="space-y-1 max-h-64 overflow-y-auto border border-muted-foreground/20 rounded bg-muted/5 p-2">
+                <div
+                  ref={playlistRef}
+                  className="space-y-1 max-h-64 overflow-y-auto border border-muted-foreground/20 rounded bg-transparent p-2 dot-grid-bg dot-grid-scroll"
+                  style={{
+                    backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"6\" height=\"6\" viewBox=\"0 0 6 6\"><rect x=\"0\" y=\"0\" width=\"3\" height=\"3\" fill=\"%2322c55e\" fill-opacity=\"0.18\"/></svg>')",
+                    backgroundSize: '6px 6px',
+                    backgroundPosition: '0 0',
+                    backgroundRepeat: 'repeat',
+                    backgroundAttachment: 'local',
+                    borderRadius: '0.5rem',
+                  }}
+                >
                   {cuePoints.map((cue, index) => {
                     const isActive = (() => {
                       if (currentTime < cuePoints[0].time) return false;
@@ -1918,21 +2192,27 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ file, importedCuePoint
                         key={cue.id}
                         data-track-index={index}
                         onClick={() => jumpToCue(cue.time)}
-                        className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all duration-200 ${
+                        className={`flex items-center justify-between p-2 rounded cursor-pointer transition-all duration-200 dot-grid-bg dot-grid-scroll ${
                           isActive 
                             ? 'bg-gradient-to-r from-primary/30 to-primary/20 text-primary border-l-4 border-primary shadow-md animate-pulse-slow' 
                             : 'hover:bg-accent/30 text-foreground hover:border-l-2 hover:border-accent'
                         }`}
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <span className={`retro-display-no-shadow text-2xs w-8 text-center ${
-                            isActive ? 'text-primary' : 'text-muted-foreground'
-                          }`}>
+                          <span className={`retro-display-no-shadow text-2xs w-8 text-center text-pink-500`}>
                             {(index + 1).toString().padStart(2, '0')}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <div className={`text-xs retro-display-no-shadow ${isActive ? 'font-bold' : ''} truncate`}>
-                              {cue.artist ? `${cue.artist} - ${cue.name}` : cue.name}
+                            <div className={`text-xs retro-display-no-shadow ${isActive ? 'font-bold' : ''} truncate flex items-baseline gap-1`}> 
+                              {cue.artist ? (
+                                <>
+                                  <span className="text-white">{cue.artist}</span>
+                                  <span className="text-[hsl(var(--accent))]">-</span>
+                                  <span className="text-[#86efac]">{cue.name}</span>
+                                </>
+                              ) : (
+                                <span className="text-[#86efac]">{cue.name}</span>
+                              )}
                             </div>
                           </div>
                         </div>
